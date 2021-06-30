@@ -6,7 +6,8 @@ import java.util.ArrayList;
 public class CurrentTaskDataBean implements Serializable {
     private String type;
     private String task_Name;
-    private String map_Name;
+    private String map_Name_uuid;
+    private String map_name;
     private ArrayList<CurrentTaskPoint> robot_task_state;
 
     public String getType() {
@@ -25,12 +26,20 @@ public class CurrentTaskDataBean implements Serializable {
         return task_Name;
     }
 
-    public String getMap_Name() {
-        return map_Name;
+    public String getMap_Name_uuid() {
+        return map_Name_uuid;
     }
 
-    public void setMap_Name(String map_Name) {
-        this.map_Name = map_Name;
+    public void setMap_Name_uuid(String map_Name_uuid) {
+        this.map_Name_uuid = map_Name_uuid;
+    }
+
+    public String getMap_name() {
+        return map_name;
+    }
+
+    public void setMap_name(String map_name) {
+        this.map_name = map_name;
     }
 
     public ArrayList<CurrentTaskPoint> getRobot_task_state() {

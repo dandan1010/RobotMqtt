@@ -31,6 +31,11 @@ public class MQTTService extends Service {
     private static String myTopic = "topic";//订阅的topic
     private String clientId = "test1";//不同客户端需要修改值
 
+    private Callback callback;
+    public interface Callback{
+        void resultMsg(MQTTMessage msg);
+    }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         init();
@@ -53,7 +58,9 @@ public class MQTTService extends Service {
         String uri = host;
         client = new MqttAndroidClient(this, uri, clientId);
         // 设置MQTT监听并且接受消息
-        client.setCallback(mqttCallback);
+        MqttHandleMsg mqttHandleMsg = new MqttHandleMsg();
+
+        client.setCallback(mqttHandleMsg);
 
         conOpt = new MqttConnectOptions();
         // 清除缓存
@@ -131,28 +138,29 @@ public class MQTTService extends Service {
         }
     };
 
-    // MQTT监听并且接受消息
-    private MqttCallback mqttCallback = new MqttCallback() {
-        @Override
-        public void messageArrived(String topic, MqttMessage message) throws Exception {
-            String str1 = new String(message.getPayload());
-            MQTTMessage msg = new MQTTMessage();
-            msg.setMessage(str1);
-            //EventBus.getDefault().post(msg);
-            String str2 = topic + ";qos:" + message.getQos() + ";retained:" + message.isRetained();
-            Log.i(TAG, "messageArrived:" + str1);
-            Log.i(TAG, str2);
-        }
-
-        @Override
-        public void deliveryComplete(IMqttDeliveryToken arg0) {
-        }
-
-        @Override
-        public void connectionLost(Throwable arg0) {
-            // 失去连接，重连
-        }
-    };
+//    // MQTT监听并且接受消息
+//    private MqttCallback mqttCallback = new MqttCallback() {
+//        @Override
+//        public void messageArrived(String topic, MqttMessage message) throws Exception {
+//            String str1 = new String(message.getPayload());
+//            MQTTMessage msg = new MQTTMessage();
+//            msg.setMessage(str1);
+//            //EventBus.getDefault().post(msg);
+//            callback.resultMsg(msg);
+//            String str2 = topic + ";qos:" + message.getQos() + ";retained:" + message.isRetained();
+//            Log.i(TAG, "messageArrived:" + str1);
+//            Log.i(TAG, str2);
+//        }
+//
+//        @Override
+//        public void deliveryComplete(IMqttDeliveryToken arg0) {
+//        }
+//
+//        @Override
+//        public void connectionLost(Throwable arg0) {
+//            // 失去连接，重连
+//        }
+//    };
 
     /**
      * 判断网络是否连接

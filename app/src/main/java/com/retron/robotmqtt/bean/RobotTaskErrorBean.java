@@ -45,9 +45,18 @@ public class RobotTaskErrorBean {
          * ros_bag : 2021_11_23_18_51_30.zip
          */
         private String error_msg;
+        private String map_name_uuid;
         private String map_name;
         private String point_name;
         private String ros_bag;
+
+        public String getMap_name_uuid() {
+            return map_name_uuid;
+        }
+
+        public void setMap_name_uuid(String map_name_uuid) {
+            this.map_name_uuid = map_name_uuid;
+        }
 
         public void setError_msg(String error_msg) {
             this.error_msg = error_msg;

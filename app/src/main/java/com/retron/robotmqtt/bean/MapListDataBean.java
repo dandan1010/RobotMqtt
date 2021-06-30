@@ -24,8 +24,9 @@ public class MapListDataBean implements Serializable {
         this.sendMapName = sendMapName;
     }
 
-    public class MapDataBean implements Serializable{
-        private String map_Name;
+    public static class MapDataBean implements Serializable{
+        private String map_name_uuid;
+        private String map_name;
         private int grid_height;
         private int grid_width;
         private double origin_x;
@@ -34,6 +35,22 @@ public class MapListDataBean implements Serializable {
         private ArrayList<PointDataBean> point;
         private VirtualDataBean virtualDataBeans;
         private DownLoadMapBean downLoadMapBean;
+
+        public String getMap_name_uuid() {
+            return map_name_uuid;
+        }
+
+        public void setMap_name_uuid(String map_name_uuid) {
+            this.map_name_uuid = map_name_uuid;
+        }
+
+        public String getMap_name() {
+            return map_name;
+        }
+
+        public void setMap_name(String map_name) {
+            this.map_name = map_name;
+        }
 
         public DownLoadMapBean getDownLoadMapBean() {
             return downLoadMapBean;
@@ -49,14 +66,6 @@ public class MapListDataBean implements Serializable {
 
         public void setVirtualDataBeans(VirtualDataBean virtualDataBeans) {
             this.virtualDataBeans = virtualDataBeans;
-        }
-
-        public String getMap_Name() {
-            return map_Name;
-        }
-
-        public void setMap_Name(String map_Name) {
-            this.map_Name = map_Name;
         }
 
         public int getGrid_height() {
@@ -110,7 +119,8 @@ public class MapListDataBean implements Serializable {
         @Override
         public String toString() {
             return "MapDataBean{" +
-                    "map_Name='" + map_Name + '\'' +
+                    "map_name_uuid='" + map_name_uuid + '\'' +
+                    ", map_name='" + map_name + '\'' +
                     ", grid_height=" + grid_height +
                     ", grid_width=" + grid_width +
                     ", origin_x=" + origin_x +

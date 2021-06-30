@@ -61,6 +61,7 @@ public class MapViewModel extends AndroidViewModel {
     }
 
     public void setMapList(MapListDataBean mapList){
+        android.util.Log.d("MapViewModel", "setMapList" ,new RuntimeException());
         this.mapList.postValue(mapList);
     }
 

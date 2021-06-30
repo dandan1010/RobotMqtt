@@ -32,18 +32,27 @@ public class SchedulerTaskListBean implements Serializable {
     private String dbAlarmCycle;//ArrayList<String> dbAlarmCycle;
     private String dbAlarmTaskName;
     private String dbAlarmTime;
-    private String map_Name;
+    private String map_name_uuid;
+    private String map_name;
     private boolean dbAlarmIsRun;
 
-    public String getMap_Name() {
-        return map_Name;
-    }
+        public String getMap_name_uuid() {
+            return map_name_uuid;
+        }
 
-    public void setMap_Name(String map_Name) {
-        this.map_Name = map_Name;
-    }
+        public void setMap_name_uuid(String map_name_uuid) {
+            this.map_name_uuid = map_name_uuid;
+        }
 
-    public void setDbAlarmTime(String dbAlarmTime) {
+        public String getMap_name() {
+            return map_name;
+        }
+
+        public void setMap_name(String map_name) {
+            this.map_name = map_name;
+        }
+
+        public void setDbAlarmTime(String dbAlarmTime) {
         this.dbAlarmTime = dbAlarmTime;
     }
 
@@ -107,7 +116,8 @@ public class SchedulerTaskListBean implements Serializable {
                     ", dbAlarmCycle='" + dbAlarmCycle + '\'' +
                     ", dbAlarmTaskName='" + dbAlarmTaskName + '\'' +
                     ", dbAlarmTime='" + dbAlarmTime + '\'' +
-                    ", map_Name='" + map_Name + '\'' +
+                    ", map_name_uuid='" + map_name_uuid + '\'' +
+                    ", map_name='" + map_name + '\'' +
                     ", dbAlarmIsRun=" + dbAlarmIsRun +
                     '}';
         }

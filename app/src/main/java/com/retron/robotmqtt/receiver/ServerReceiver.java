@@ -14,8 +14,9 @@ public class ServerReceiver extends BroadcastReceiver {
             Intent intentServer = new Intent(context, KeepAliveService.class);
             context.startService(intentServer);
         } else if ("com.android.mqtt.reconnect".equals(intent.getAction())) {
-            KeepAliveService keepAliveService = new KeepAliveService();
-            keepAliveService.connect();
+            Intent intentServer = new Intent(context, KeepAliveService.class);
+            context.stopService(intentServer);
+            context.startService(intentServer);
         }
     }
 }

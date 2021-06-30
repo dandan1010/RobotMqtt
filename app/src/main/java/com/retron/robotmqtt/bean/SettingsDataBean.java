@@ -15,7 +15,8 @@ public class SettingsDataBean implements Serializable {
     private int get_voice_level;
     private int get_working_mode;
     private String get_charging_mode;
-    private String map_Name;
+    private String map_name_uuid;
+    private String map_name;
     private String versionCode;
     private String robotVersionCode;
     private String robot_name;
@@ -28,12 +29,20 @@ public class SettingsDataBean implements Serializable {
         return type;
     }
 
-    public void setMap_Name(String map_Name) {
-        this.map_Name = map_Name;
+    public String getMap_name_uuid() {
+        return map_name_uuid;
     }
 
-    public String getMap_Name() {
-        return map_Name;
+    public void setMap_name_uuid(String map_name_uuid) {
+        this.map_name_uuid = map_name_uuid;
+    }
+
+    public String getMap_name() {
+        return map_name;
+    }
+
+    public void setMap_name(String map_name) {
+        this.map_name = map_name;
     }
 
     public int getGet_low_battery() {
@@ -109,20 +118,20 @@ public class SettingsDataBean implements Serializable {
     }
 
     @Override
-    public boolean equals(@Nullable Object obj) {
-        if(obj instanceof SettingsDataBean){
-            SettingsDataBean settings = (SettingsDataBean)obj;
-            return TextUtils.equals(type,settings.type)
-                   &&get_navigationSpeedLevel == settings.get_navigationSpeedLevel
-                   &&get_playPathSpeedLevel == settings.get_playPathSpeedLevel
-                   &&get_low_battery == settings.get_low_battery
-                   && get_voice_level == settings.get_voice_level
-                   && get_working_mode == settings.get_working_mode
-                   && TextUtils.equals(get_charging_mode, settings.get_charging_mode)
-                   && TextUtils.equals(map_Name, settings.map_Name)
-                   && TextUtils.equals(versionCode,settings.versionCode)
-                   && TextUtils.equals(robotVersionCode, settings.robotVersionCode);
-        }
-        return false;
+    public String toString() {
+        return "SettingsDataBean{" +
+                "type='" + type + '\'' +
+                ", get_navigationSpeedLevel=" + get_navigationSpeedLevel +
+                ", get_playPathSpeedLevel=" + get_playPathSpeedLevel +
+                ", get_low_battery=" + get_low_battery +
+                ", get_voice_level=" + get_voice_level +
+                ", get_working_mode=" + get_working_mode +
+                ", get_charging_mode='" + get_charging_mode + '\'' +
+                ", map_name_uuid='" + map_name_uuid + '\'' +
+                ", map_name='" + map_name + '\'' +
+                ", versionCode='" + versionCode + '\'' +
+                ", robotVersionCode='" + robotVersionCode + '\'' +
+                ", robot_name='" + robot_name + '\'' +
+                '}';
     }
 }

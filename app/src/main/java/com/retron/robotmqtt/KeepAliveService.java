@@ -21,6 +21,7 @@ import com.retron.robotmqtt.bean.DownLoadMapBean;
 import com.retron.robotmqtt.bean.HistoryBean;
 import com.retron.robotmqtt.bean.HistoryTaskDataBean;
 import com.retron.robotmqtt.bean.MapListDataBean;
+import com.retron.robotmqtt.bean.PointDataBean;
 import com.retron.robotmqtt.bean.RobotHealthyBean;
 import com.retron.robotmqtt.bean.RobotStatusDataBean;
 import com.retron.robotmqtt.bean.RobotTaskErrorBean;
@@ -28,9 +29,11 @@ import com.retron.robotmqtt.bean.SchedulerTaskListBean;
 import com.retron.robotmqtt.bean.SendPointPosition;
 import com.retron.robotmqtt.bean.SettingsDataBean;
 import com.retron.robotmqtt.bean.VirtualDataBean;
+import com.retron.robotmqtt.contrast.Contrast;
 import com.retron.robotmqtt.data.DeviceInfoViewModel;
 import com.retron.robotmqtt.data.MapViewModel;
 import com.retron.robotmqtt.data.TaskViewModel;
+import com.retron.robotmqtt.mqtt.MQTTService;
 import com.retron.robotmqtt.utils.AlarmUtils;
 import com.retron.robotmqtt.utils.Content;
 import com.retron.robotmqtt.utils.GsonUtils;
@@ -39,6 +42,9 @@ import com.retron.robotmqtt.utils.SharedPrefUtil;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -56,23 +62,29 @@ public class KeepAliveService extends LifecycleService {
     private static MapViewModel mapViewModel;
     private static DeviceInfoViewModel deviceInfoViewModel;
     private MapListDataBean mMapListDataBean;
+    private MapListDataBean currentMapListDataBean;
     private int mapListIndex = 0;
     public static WebSocket webSocket;
     private Context mContext;
     private AlarmUtils mAlarmUtils;
     private boolean reportHealthyTime = false;
+    private Contrast mContrast;
 
     @Override
     public void onCreate() {
         super.onCreate();
         mContext = this;
         gson = new Gson();
+        mContrast = new Contrast();
         gsonUtils = new GsonUtils();
         mAlarmUtils = new AlarmUtils(mContext);
+        currentMapListDataBean = new MapListDataBean();
         Log.d(TAG,"onCreate");
         initModel();
-
         webSocket = connect();
+        Intent intent = new Intent(mContext, MQTTService.class);
+        startService(intent);
+
         if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             //数字是随便写的“40”，
@@ -177,7 +189,17 @@ public class KeepAliveService extends LifecycleService {
             case Content.SENDMAPNAME:
                 //地图列表
                 MapListDataBean mapList = gson.fromJson(message, MapListDataBean.class);
-                mapViewModel.setMapList(mapList);
+
+                if (mapViewModel.getMapList() == null || !mapList.toString().equals(mapViewModel.getMapList().toString())) {
+                    Log.d("SENDMAPNAME", "11111" + mapViewModel.getMapList());
+                    mMapListDataBean = mapList;
+                    Log.d("SENDMAPNAME", "2222" + mapViewModel.getMapList());
+                    ArrayList<MapListDataBean.MapDataBean> mapDataBeans = putDataBean(mapList);
+                    currentMapListDataBean.setSendMapName(mapDataBeans);
+                    currentMapListDataBean.setType(mapList.getType());
+                    //mapViewModel.setMapList(mMapListDataBean);
+                }
+                Log.d("SENDMAPNAME", "3333" + mapViewModel.getMapList());
                 break;
             case Content.GETPOSITION:
                 System.out.println("GETPOSITION: " + message);
@@ -189,11 +211,11 @@ public class KeepAliveService extends LifecycleService {
                     e.printStackTrace();
                 }
                 break;
-            case Content.SENDPOINTPOSITION:
-                //当前地图点列表
-                SendPointPosition points = gson.fromJson(message, SendPointPosition.class);
-                mapViewModel.setAllPoints(points);
-                break;
+//            case Content.SENDPOINTPOSITION:
+//                //当前地图点列表
+//                SendPointPosition points = gson.fromJson(message, SendPointPosition.class);
+//                mapViewModel.setAllPoints(points);
+//                break;
             case Content.SENDGPSPOSITION:
                 CurrentPositionDataBean currPoint = gson.fromJson(message, CurrentPositionDataBean.class);
                 Log.d(TAG, "SENDGPSPOSITION point is " + jsonObject + ", currPoint is " + currPoint);
@@ -227,7 +249,7 @@ public class KeepAliveService extends LifecycleService {
                 break;
             case Content.ADDPOINTPOSITION:
                 AddPointPositionDataBean currentPoints = gson.fromJson(message, AddPointPositionDataBean.class);
-                mapViewModel.setCurrentEditMapPoint(currentPoints.getPoint());
+                //mapViewModel.setCurrentEditMapPoint(currentPoints.getPoint());
                 break;
             case Content.UPDATE_FILE_LENGTH:
                 try {
@@ -240,7 +262,35 @@ public class KeepAliveService extends LifecycleService {
                 break;
             case Content.SEND_MQTT_VIRTUAL:
                 VirtualDataBean virtualDataBean = gson.fromJson(message,VirtualDataBean.class);
-                mapViewModel.setWall(virtualDataBean);
+                Log.d(TAG, "mapViewModel.currentMapListDataBean: " + currentMapListDataBean.getSendMapName().size());
+                Log.d("SENDMAPNAME", "4444" + mapViewModel.getMapList());
+                for (int i = 0; i < currentMapListDataBean.getSendMapName().size(); i++) {
+                    if (virtualDataBean.getMap_name_uuid().equals(currentMapListDataBean.getSendMapName().get(i).getMap_name_uuid())){
+                        currentMapListDataBean.getSendMapName().get(i).setVirtualDataBeans(virtualDataBean);
+                        Log.d(TAG, "mapViewModel.virtualDataBean: " + virtualDataBean.toString());
+                        mapListIndex ++;
+                    }
+                }
+                Log.d("SENDMAPNAME", "5555" + mapViewModel.getMapList());
+               // Log.d(TAG, "mapViewModel.wall: " + mMapListDataBean.getSendMapName().toString());
+                if (mapListIndex >= currentMapListDataBean.getSendMapName().size()) {
+                    mapListIndex = 0;
+                    Log.d("SENDMAPNAME", "6666" + mapViewModel.getMapList());
+                    ArrayList<MapListDataBean.MapDataBean> mapDataBeans = putDataBean(currentMapListDataBean);
+                    Log.d("SENDMAPNAME", "7777" + mapViewModel.getMapList());
+                    if (mapViewModel.getMapList() == null || !currentMapListDataBean.toString().equals(mapViewModel.getMapList().toString())) {
+                        Log.d("SENDMAPNAME", "8888" + mapViewModel.getMapList());
+                        mMapListDataBean.setSendMapName(mapDataBeans);
+                        mapViewModel.setMapList(mMapListDataBean);
+                    } else if (mContrast.contractVirtual(currentMapListDataBean,mapViewModel)) {
+                        Log.d("SENDMAPNAME", "1010" + mapViewModel.getMapList());
+                        mMapListDataBean.setSendMapName(mapDataBeans);
+                        mapViewModel.setMapList(mMapListDataBean);
+                    }
+                    Log.d("SENDMAPNAME", "1212" + mapViewModel.getMapList());
+                    Log.d(TAG, "mapViewModel.wall: " + currentMapListDataBean.toString() + ", \nmodel " + mapViewModel.getMapList().toString());
+                }
+
                 break;
             case Content.REQUEST_MSG:
                 try {
@@ -268,6 +318,32 @@ public class KeepAliveService extends LifecycleService {
                 Log.e(TAG, "NO USER MESSAGE " + message);
                 break;
         }
+    }
+
+    private ArrayList<MapListDataBean.MapDataBean> putDataBean(MapListDataBean mapListDataBean) {
+        ArrayList<MapListDataBean.MapDataBean> mapDataBeans = new ArrayList<>();
+        //mapDataBeans.addAll(mapList.getSendMapName());
+        for (int i = 0; i < mapListDataBean.getSendMapName().size();i++) {
+            MapListDataBean.MapDataBean mMap = new MapListDataBean.MapDataBean();
+            ArrayList<PointDataBean> point = new ArrayList<>();
+            point.addAll(mapListDataBean.getSendMapName().get(i).getPoint());
+            VirtualDataBean virtualDataBeans = new VirtualDataBean();
+            virtualDataBeans = mapListDataBean.getSendMapName().get(i).getVirtualDataBeans();
+            DownLoadMapBean downLoadMapBean = null;
+
+            mMap.setMap_name_uuid(mapListDataBean.getSendMapName().get(i).getMap_name_uuid());
+            mMap.setMap_name(mapListDataBean.getSendMapName().get(i).getMap_name());
+            mMap.setGrid_width(mapListDataBean.getSendMapName().get(i).getGrid_width());
+            mMap.setGrid_height(mapListDataBean.getSendMapName().get(i).getGrid_height());
+            mMap.setOrigin_x(mapListDataBean.getSendMapName().get(i).getOrigin_x());
+            mMap.setOrigin_y(mapListDataBean.getSendMapName().get(i).getOrigin_y());
+            mMap.setResolution(mapListDataBean.getSendMapName().get(i).getResolution());
+            mMap.setVirtualDataBeans(virtualDataBeans);
+            mMap.setPoint(point);
+            mMap.setDownLoadMapBean(downLoadMapBean);
+            mapDataBeans.add(mMap);
+        }
+        return mapDataBeans;
     }
 
     private void initObserver() {
@@ -317,33 +393,19 @@ public class KeepAliveService extends LifecycleService {
         mapViewModel.mapList.observeForever(new Observer<MapListDataBean>() {
             @Override
             public void onChanged(MapListDataBean mapListDataBean) {
-                mMapListDataBean = mapListDataBean;
+                Log.d(TAG, "mapList: " + mMapListDataBean.getSendMapName().toString());
+                Log.d(TAG, "发送mapList--mqtt");
             }
         });
-//地图虚拟墙
-        mapViewModel.wall.observeForever(new Observer<VirtualDataBean>() {
-            @Override
-            public void onChanged(VirtualDataBean virtualDataBean) {
-                Log.d(TAG, "VirtualDataBean.wall: " + virtualDataBean.toString());
-                for (int i = 0; i < mMapListDataBean.getSendMapName().size(); i++) {
-                    if (virtualDataBean.getMap_name().equals(mMapListDataBean.getSendMapName().get(i).getMap_Name())){
-                        mMapListDataBean.getSendMapName().get(i).setVirtualDataBeans(virtualDataBean);
-                        mapListIndex ++;
-                    }
-                }
-                Log.d(TAG, "mapViewModel.wall: " + mMapListDataBean.getSendMapName().toString());
-                if (mapListIndex >= mMapListDataBean.getSendMapName().size()) {
-                    Log.d(TAG, "发送map--mqtt");
-                }
-            }
-        });
+
+
 //地图图片文件
         mapViewModel.downLoadMap.observeForever(new Observer<DownLoadMapBean>() {
             @Override
             public void onChanged(DownLoadMapBean downLoadMapBean) {
                 Log.d(TAG, "onChanged downLoadMap.wall: " + downLoadMapBean.toString());
                 for (int i = 0; i < mMapListDataBean.getSendMapName().size(); i++) {
-                    if (downLoadMapBean.getMap_Name().equals(mMapListDataBean.getSendMapName().get(i).getMap_Name())){
+                    if (downLoadMapBean.getMap_Name_uuid().equals(mMapListDataBean.getSendMapName().get(i).getMap_name_uuid())){
                         mMapListDataBean.getSendMapName().get(i).setDownLoadMapBean(downLoadMapBean);
                     }
                 }
@@ -376,8 +438,6 @@ public class KeepAliveService extends LifecycleService {
                 Log.d(TAG, "发送history--mqtt" + historyTaskDataBean.toString());
             }
         });
-
-
 
     }
 
