@@ -89,5 +89,25 @@ public class RobotTaskErrorBean {
         public String getRos_bag() {
             return ros_bag;
         }
+
+        @Override
+        public String toString() {
+            return "Robot_task_error_msgEntity{" +
+                    "error_msg='" + error_msg + '\'' +
+                    ", map_name_uuid='" + map_name_uuid + '\'' +
+                    ", map_name='" + map_name + '\'' +
+                    ", point_name='" + point_name + '\'' +
+                    ", ros_bag='" + ros_bag + '\'' +
+                    '}';
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "RobotTaskErrorBean{" +
+                "report_time='" + report_time + '\'' +
+                ", type='" + type + '\'' +
+                ", robot_task_error_msg=" + robot_task_error_msg +
+                '}';
     }
 }

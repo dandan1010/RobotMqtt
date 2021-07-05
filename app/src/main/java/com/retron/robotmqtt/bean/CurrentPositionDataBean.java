@@ -6,6 +6,9 @@ public class CurrentPositionDataBean implements Serializable {
     /*{"type":"sendGpsPosition","robot_x":155,"robot_y":44,"grid_height":320,"grid_width":224,"origin_x":-8.699999809265137,"origin_y":-2.3499999046325684,"resolution":0.05000000074505806,"angle":171.45908700692397}*/
 
     private String type;
+    private String map_name;
+    private String map_name_uuid;
+    private String current_initialize_status;
     private double robot_x;
     private double robot_y;
     private int grid_height;
@@ -14,6 +17,48 @@ public class CurrentPositionDataBean implements Serializable {
     private double origin_y;
     private double resolution;
     private double angle;
+    private double angular_speed;
+    private double linear_speed;
+
+    public double getAngular_speed() {
+        return angular_speed;
+    }
+
+    public void setAngular_speed(double angular_speed) {
+        this.angular_speed = angular_speed;
+    }
+
+    public double getLinear_speed() {
+        return linear_speed;
+    }
+
+    public void setLinear_speed(double linear_speed) {
+        this.linear_speed = linear_speed;
+    }
+
+    public String getMap_name() {
+        return map_name;
+    }
+
+    public void setMap_name(String map_name) {
+        this.map_name = map_name;
+    }
+
+    public String getMap_name_uuid() {
+        return map_name_uuid;
+    }
+
+    public void setMap_name_uuid(String map_name_uuid) {
+        this.map_name_uuid = map_name_uuid;
+    }
+
+    public String getCurrent_initialize_status() {
+        return current_initialize_status;
+    }
+
+    public void setCurrent_initialize_status(String current_initialize_status) {
+        this.current_initialize_status = current_initialize_status;
+    }
 
     public String getType() {
         return type;
@@ -91,6 +136,9 @@ public class CurrentPositionDataBean implements Serializable {
     public String toString() {
         return "CurrentPositionDataBean{" +
                 "type='" + type + '\'' +
+                ", map_name='" + map_name + '\'' +
+                ", map_name_uuid='" + map_name_uuid + '\'' +
+                ", current_initialize_status='" + current_initialize_status + '\'' +
                 ", robot_x=" + robot_x +
                 ", robot_y=" + robot_y +
                 ", grid_height=" + grid_height +
@@ -99,6 +147,8 @@ public class CurrentPositionDataBean implements Serializable {
                 ", origin_y=" + origin_y +
                 ", resolution=" + resolution +
                 ", angle=" + angle +
+                ", angular_speed=" + angular_speed +
+                ", linear_speed=" + linear_speed +
                 '}';
     }
 }

@@ -5,14 +5,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.retron.robotmqtt.mqtt.MQTTService;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Intent intentServer = new Intent(this, KeepAliveService.class);
-        this.startService(intentServer);
-
+        Intent intent = new Intent(this, MQTTService.class);
+        startService(intent);
     }
 }

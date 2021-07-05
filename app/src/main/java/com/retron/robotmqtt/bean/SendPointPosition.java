@@ -32,4 +32,13 @@ public class SendPointPosition implements Serializable {
     public void setName(String name) {
         this.name = name;
     }
+
+    @Override
+    public String toString() {
+        return "SendPointPosition{" +
+                "type='" + type + '\'' +
+                ", name='" + name + '\'' +
+                ", sendPointPosition=" + sendPointPosition +
+                '}';
+    }
 }

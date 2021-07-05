@@ -54,4 +54,15 @@ public class HistoryBean {
     public void setDate(String date) {
         this.date = date;
     }
+
+    @Override
+    public String toString() {
+        return "HistoryBean{" +
+                "mapName='" + mapName + '\'' +
+                ", taskName='" + taskName + '\'' +
+                ", time='" + time + '\'' +
+                ", date='" + date + '\'' +
+                ", pointStatus='" + pointStatus + '\'' +
+                '}';
+    }
 }

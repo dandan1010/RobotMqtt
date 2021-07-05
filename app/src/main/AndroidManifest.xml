@@ -46,6 +46,7 @@
         </receiver>
         <service android:name=".KeepAliveService"/>
         <service android:name=".mqtt.MQTTService"/>
+        <service android:name="org.eclipse.paho.android.service.MqttService" />
     </application>
 
 </manifest>

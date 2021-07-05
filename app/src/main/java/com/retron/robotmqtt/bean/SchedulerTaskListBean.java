@@ -27,14 +27,14 @@ public class SchedulerTaskListBean implements Serializable {
 
     public class SchedulerTaskBean implements Serializable {
 
-    private ArrayList<PointDataBean> point;
-    private String task_Name;
-    private String dbAlarmCycle;//ArrayList<String> dbAlarmCycle;
-    private String dbAlarmTaskName;
-    private String dbAlarmTime;
-    private String map_name_uuid;
-    private String map_name;
-    private boolean dbAlarmIsRun;
+        private ArrayList<PointDataBean> point;
+        private String task_Name;
+        private String dbAlarmCycle;//ArrayList<String> dbAlarmCycle;
+        private String dbAlarmTaskName;
+        private String dbAlarmTime;
+        private String map_name_uuid;
+        private String map_name;
+        private boolean dbAlarmIsRun;
 
         public String getMap_name_uuid() {
             return map_name_uuid;
@@ -53,20 +53,20 @@ public class SchedulerTaskListBean implements Serializable {
         }
 
         public void setDbAlarmTime(String dbAlarmTime) {
-        this.dbAlarmTime = dbAlarmTime;
-    }
+            this.dbAlarmTime = dbAlarmTime;
+        }
 
     /*public void setDbAlarmCycle(ArrayList<String> dbAlarmCycle) {
         this.dbAlarmCycle = dbAlarmCycle;
     }*/
 
-    public String getDbAlarmTime() {
-        return dbAlarmTime;
-    }
+        public String getDbAlarmTime() {
+            return dbAlarmTime;
+        }
 
-    public ArrayList<PointDataBean> getPoint() {
-        return point;
-    }
+        public ArrayList<PointDataBean> getPoint() {
+            return point;
+        }
 
     /*public ArrayList<String> getDbAlarmCycle() {
         return dbAlarmCycle;
@@ -81,16 +81,16 @@ public class SchedulerTaskListBean implements Serializable {
         }
 
         public String getDbAlarmTaskName() {
-        return dbAlarmTaskName;
-    }
+            return dbAlarmTaskName;
+        }
 
-    public void setDbAlarmTaskName(String dbAlarmTaskName) {
-        this.dbAlarmTaskName = dbAlarmTaskName;
-    }
+        public void setDbAlarmTaskName(String dbAlarmTaskName) {
+            this.dbAlarmTaskName = dbAlarmTaskName;
+        }
 
-    public void setPoint(ArrayList<PointDataBean> point) {
-        this.point = point;
-    }
+        public void setPoint(ArrayList<PointDataBean> point) {
+            this.point = point;
+        }
 
         public String getTask_Name() {
             return task_Name;
@@ -123,5 +123,11 @@ public class SchedulerTaskListBean implements Serializable {
         }
     }
 
-
+    @Override
+    public String toString() {
+        return "SchedulerTaskListBean{" +
+                "type='" + type + '\'' +
+                ", task=" + task +
+                '}';
+    }
 }

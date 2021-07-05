@@ -19,4 +19,12 @@ public class DrawLineBean {
     public void setY(double y) {
         this.y = y;
     }
+
+    @Override
+    public String toString() {
+        return "DrawLineBean{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
+    }
 }

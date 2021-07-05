@@ -11,6 +11,7 @@ public final class Content {
     public static boolean urgencyStopmessage = false;
     public static String ROBOT_TASK_DATE = "robot_task_date";
     public static String REPORT_TIME = "report_time";//健康报告时间
+    public static final String ROBOT_TASK_ERROR = "robot_task_error";//点任务报错信息
     /**
      * robotState：
      * 0:关机
@@ -157,6 +158,7 @@ public final class Content {
     public static final String ORIGIN_X = "origin_x";//原点x
     public static final String ORIGIN_Y = "origin_y";//原点Y
     public static final String RESOLUTION = "resolution";
+    public static final String CURRENT_INITIALIZE_STATUS = "current_initialize_status";//是否有位置信息
 
     public static final String POINT_X = "point_x";//点x坐标
     public static final String POINT_Y = "point_y";//点y坐标

@@ -24,4 +24,12 @@ public class RobotHealthyBean {
     public String getType() {
         return type;
     }
+
+    @Override
+    public String toString() {
+        return "RobotHealthyBean{" +
+                "robot_healthy='" + robot_healthy + '\'' +
+                ", type='" + type + '\'' +
+                '}';
+    }
 }

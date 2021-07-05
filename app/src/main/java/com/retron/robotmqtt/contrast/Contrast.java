@@ -2,16 +2,21 @@ package com.retron.robotmqtt.contrast;
 
 import android.util.Log;
 
+import com.retron.robotmqtt.KeepAliveService;
 import com.retron.robotmqtt.bean.MapListDataBean;
+import com.retron.robotmqtt.bean.MapListDataChangeBean;
 import com.retron.robotmqtt.bean.PointDataBean;
 import com.retron.robotmqtt.bean.VirtualDataBean;
 import com.retron.robotmqtt.data.MapViewModel;
+import com.retron.robotmqtt.utils.Content;
+import com.retron.robotmqtt.utils.GsonUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class Contrast {
 
+    public static ArrayList<MapListDataChangeBean> beanArrayList = new ArrayList<>();
     public boolean contrastMapList(MapListDataBean mapListDataBean, MapViewModel mapViewModel) {
         Log.d("contrastMapList", "contrastMapList");
         //Log.d("contrastMapList", ""+ mapListDataBean.getSendMapName().size() + ",   " + mapViewModel.getMapList().getSendMapName().size());
@@ -86,93 +91,95 @@ public class Contrast {
         return false;
     }
 
-    public boolean contractVirtual(MapListDataBean mapListDataBean, MapViewModel mapViewModel) {
 
-       // if (mapListDataBean.getSendMapName().get(0).getVirtualDataBeans().toString().equals(mapViewModel.wall.toString()))
+    public void contrastMapList(MapListDataBean mapListDataBean, GsonUtils gsonUtils) {
+        ArrayList<MapListDataChangeBean> changeBeans = new ArrayList<>();
+        if (mapListDataBean.getSendMapName().size() == 0
+                && KeepAliveService.mapViewModel != null
+                && KeepAliveService.mapViewModel.getMapList() != null
+                && KeepAliveService.mapViewModel.getMapList().getSendMapName().size() != 0) {
+            //无地图，删除所有地图
+            ArrayList<String> deleteMapName = new ArrayList<>();
+            for (int i = 0; i < KeepAliveService.mapViewModel.getMapList().getSendMapName().size(); i++) {
+                deleteMapName.add(KeepAliveService.mapViewModel.getMapList().getSendMapName().get(i).getMap_name_uuid());
+            }
+            KeepAliveService.webSocket.send(gsonUtils.sendRobotMsg(Content.DELETE_MAP, deleteMapName));
+        } else if (KeepAliveService.mapViewModel != null
+                && KeepAliveService.mapViewModel.getMapList() != null
+                && KeepAliveService.mapViewModel.getMapList().getSendMapName().size() != 0) {
+            ArrayList<MapListDataBean.MapDataBean> arrayList = KeepAliveService.mapViewModel.getMapList().getSendMapName();
+            if (arrayList.size() >= mapListDataBean.getSendMapName().size()) {
+                for (int i = 0; i < arrayList.size(); i++) {
+                    for (int j = 0; j < mapListDataBean.getSendMapName().size(); j++) {
+                        if (arrayList.get(i).getMap_name_uuid().equals(mapListDataBean.getSendMapName().get(j).getMap_name_uuid())) {
+                            if (!arrayList.get(i).getMap_name().equals(mapListDataBean.getSendMapName().get(j).getMap_name())) {
+                                //修改地图名字
+                                Log.d("地图", "修改地图名字为： " + mapListDataBean.getSendMapName().get(j).getMap_name());
+                                MapListDataChangeBean mapListDataChangeBean = new MapListDataChangeBean();
+                                mapListDataChangeBean.setType("renameMapName");
+                                //contrastPoint(arrayList.get(i).getPoint(), mapListDataBean.getSendMapName().get(j).getPoint(), mapListDataChangeBean);
 
-        boolean isBreak = false;
-        int flagW = 0;
-        if (mapViewModel.getMapList() != null) {
-            if (mapListDataBean.getSendMapName().size() == mapViewModel.getMapList().getSendMapName().size()) {
-                for (int i = 0; i < mapListDataBean.getSendMapName().size(); i++) {
-                    //地图名字
-                    ArrayList<MapListDataBean.MapDataBean> mSendMapNames = mapViewModel.getMapList().getSendMapName();
 
-                    for (int j = 0; j < mSendMapNames.size(); j++) {
-                        if (mapListDataBean.getSendMapName().get(i).getMap_name_uuid()
-                                .equals(mSendMapNames.get(j).getMap_name_uuid())) {
-                            if (mapListDataBean.getSendMapName().get(i).getMap_name()
-                                    .equals(mSendMapNames.get(j).getMap_name())) {
-                                //比较虚拟墙
-                                ArrayList<ArrayList<VirtualDataBean.Point>> virtualDataBeans = mapListDataBean.getSendMapName().get(i).getVirtualDataBeans().getSend_virtual();
-                                ArrayList<ArrayList<VirtualDataBean.Point>> virtualDataBeansModel = mSendMapNames.get(j).getVirtualDataBeans().getSend_virtual();
-                                Log.d("contractVirtual", "size---" + virtualDataBeans.toString() +"\n model : " + virtualDataBeansModel.toString());
-                                flagW = 0;
-                                if (virtualDataBeans.toString().equals(virtualDataBeansModel.toString())) {
-                                    Log.d("contractVirtual", "continue");
-                                    continue;
-                                } else {
-                                    Log.d("contractVirtual", "3333 ddddd is different");
-                                    return true;
-                                }
-//                                if (virtualDataBeans.size() == virtualDataBeansModel.size()) {
-//                                    for (int q = 0; q < virtualDataBeans.size(); q++) {
-//                                        Log.d("contractVirtual", "size---" + virtualDataBeans.size() + ", q : " +  q);
-//                                        for (int w = 0; w < virtualDataBeansModel.size(); w++) {
-//                                            if (virtualDataBeans.get(q).size() == virtualDataBeansModel.get(w).size()) {
-//                                                Log.d("contractVirtual", "size---" + virtualDataBeansModel.get(w).size() + ", w : " +  w);
-//                                                for (int qq = 0; qq < virtualDataBeans.get(q).size(); qq++) {
-//                                                    Log.d("contractVirtual", "size---" + virtualDataBeans.get(q).size() + ", qq : " +  qq);
-//                                                    for (int ww = 0; ww < virtualDataBeansModel.get(w).size(); ww++) {
-//                                                        if (virtualDataBeans.get(q).get(qq).getVirtual_x() == virtualDataBeansModel.get(w).get(ww).getVirtual_x()) {
-//                                                            if (virtualDataBeans.get(q).get(qq).getVirtual_y() == virtualDataBeansModel.get(w).get(ww).getVirtual_y()) {
-//                                                                Log.d("contractVirtual", "break---" + isBreak);
-//                                                                break;
-//                                                            }
-//                                                        }
-////                                                        if (ww == virtualDataBeansModel.get(w).size() - 1) {
-////                                                            Log.d("contractVirtual", "Virtual ddddd size is different");
-////                                                            return true;
-////                                                        }
-//                                                    }
-////                                                    if (virtualDataBeansModel.size() - 1 == w) {
-//////                                                    flagW++;
-////                                                    break;
-////                                                }
-//                                                    if (qq == virtualDataBeans.get(q).size() - 1) {
-//                                                        Log.d("contractVirtual", "Virtual 1111 size is different");
-//                                                        return true;
-//                                                    }
-//                                                }
-////                                                Log.d("contractVirtual", "Virtual www break");
-////                                                if (virtualDataBeansModel.size() - 1 == w) {
-////                                                    flagW++;
-////                                                    break;
-////                                                }
-//                                            } else {
-//                                                Log.d("contractVirtual", "Virtual 2222 size is different");
-//                                                return true;
-//                                            }
-//                                        }
-//
-//                                    }
-//                                } else {
-//                                    Log.d("contractVirtual", "4444 size is different");
-//                                    return true;
-//                                }
+
+
                             }
+                        } else if (j == mapListDataBean.getSendMapName().size() - 1) {
+                            //删除地图 arrayList.get(i)
+                            Log.d("地图", "删除地图" + arrayList.get(i).getMap_name());
                         }
                     }
+
                 }
             } else {
-                Log.d("contractVirtual", "3333 size is different");
-                return true;
+                for (int j = 0; j < mapListDataBean.getSendMapName().size(); j++) {
+                    for (int i = 0; i < arrayList.size(); i++) {
+                        if (arrayList.get(i).getMap_name_uuid().equals(mapListDataBean.getSendMapName().get(j).getMap_name_uuid())) {
+                            if (arrayList.get(i).getMap_name().equals(mapListDataBean.getSendMapName().get(j).getMap_name())) {
+
+                            } else {
+                                //修改地图名字
+                                Log.d("地图11", "修改地图名字为： " + mapListDataBean.getSendMapName().get(j).getMap_name());
+                            }
+                            //contrastPoint(arrayList.get(i).getPoint(), mapListDataBean.getSendMapName().get(j).getPoint());
+                        } else if (i == arrayList.size() - 1) {
+                            //删除地图 arrayList.get(i)
+                            Log.d("地图11", "添加地图" + arrayList.get(i).getMap_name());
+                        }
+                    }
+
+                }
             }
-        } else {
-            Log.d("contractVirtual", "5555 size is different");
-            return true;
         }
-        Log.d("contractVirtual", "false");
-        return false;
     }
+
+   /* private ArrayList<PointDataBean> contrastPoint(ArrayList<PointDataBean> pointModel, ArrayList<PointDataBean> point, MapListDataChangeBean bean) {
+        ArrayList<PointDataBean> dataBeans = new ArrayList<>();
+        if (pointModel.size() >= point.size()) {//删除点
+            for (int i = 0;i<pointModel.size();i++) {
+                for (int j = 0; j < point.size(); j++) {
+                    if (pointModel.get(i).getPoint_Name().equals(point.get(j).getPoint_Name())) {
+                        if (!pointModel.get(i).toString().equals(point.get(j).toString())) {//内容不一样，删除之前的点新加
+                            PointDataBean pointDataBean = new PointDataBean();
+                            pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
+                            pointDataBean.setPoint_type(point.get(j).getPoint_type());
+                            pointDataBean.setPoint_time(point.get(j).getPoint_time());
+                            pointDataBean.setPoint_x(point.get(j).getPoint_x());
+                            pointDataBean.setPoint_y(point.get(j).getPoint_y());
+                            pointDataBean.setAngle(point.get(j).getAngle());
+                            dataBeans.add(pointDataBean);
+                        }
+                    }
+                    if (j == point.size() - 1 ) {
+                        Log.d("地图22", "删除点：" + pointModel.get(i).getPoint_Name());
+                        //bean.set
+                    }
+                }
+                //bean.setSendMapName(dataBeans);
+            }
+        } else {//添加点
+
+        }
+
+    }
+*/
 }

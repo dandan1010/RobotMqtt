@@ -88,5 +88,26 @@ public class CurrentTaskDataBean implements Serializable {
         public void setPoint_state(String point_state) {
             this.point_state = point_state;
         }
+
+        @Override
+        public String toString() {
+            return "CurrentTaskPoint{" +
+                    "point_index=" + point_index +
+                    ", point_Name='" + point_Name + '\'' +
+                    ", point_type='" + point_type + '\'' +
+                    ", point_state='" + point_state + '\'' +
+                    '}';
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "CurrentTaskDataBean{" +
+                "type='" + type + '\'' +
+                ", task_Name='" + task_Name + '\'' +
+                ", map_Name_uuid='" + map_Name_uuid + '\'' +
+                ", map_name='" + map_name + '\'' +
+                ", robot_task_state=" + robot_task_state +
+                '}';
     }
 }

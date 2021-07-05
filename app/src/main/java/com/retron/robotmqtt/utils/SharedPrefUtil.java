@@ -32,13 +32,13 @@ public class SharedPrefUtil {
     }
 
     //历史任务时间
-    public void setHistoryTime(String key, String time) {
-        editor.putString(key, time);
+    public void setHistoryTime(String key, long time) {
+        editor.putLong(key, time);
         editor.commit();
     }
 
-    public String getHistoryTime(String key) {
-        return sharedPreferences.getString(key, "");
+    public long getHistoryTime(String key) {
+        return sharedPreferences.getLong(key, 0);
     }
 
     /**

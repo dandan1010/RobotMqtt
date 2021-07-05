@@ -53,11 +53,11 @@ public class TaskViewModel extends AndroidViewModel {
         this.history.postValue(historyTask);
     }
 
-    public RobotTaskErrorBean getrobotError(){
+    public RobotTaskErrorBean getRobotTaskErrorBean(){
         return this.taskError.getValue();
     }
 
-    public void setrobotError(RobotTaskErrorBean taskErrorBean){
+    public void setRobotTaskErrorBean(RobotTaskErrorBean taskErrorBean){
         this.taskError.postValue(taskErrorBean);
     }
 }

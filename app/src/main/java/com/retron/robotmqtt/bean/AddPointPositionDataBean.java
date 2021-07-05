@@ -22,4 +22,12 @@ public class AddPointPositionDataBean implements Serializable {
     public ArrayList<PointDataBean> getPoint() {
         return point;
     }
+
+    @Override
+    public String toString() {
+        return "AddPointPositionDataBean{" +
+                "type='" + type + '\'' +
+                ", point=" + point +
+                '}';
+    }
 }

@@ -10,6 +10,8 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.retron.robotmqtt.KeepAliveService;
+
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -25,16 +27,11 @@ public class MQTTService extends Service {
     private static MqttAndroidClient client;
     private MqttConnectOptions conOpt;
     //    private String host = "tcp://10.0.2.2:61613";//模拟器
-    private String host = "tcp://192.168.1.102:61613";//真机，实际是电脑端服务器部署的ip地址，不是手机的ip地址
-    private String userName = "admin";
-    private String passWord = "password";
-    private static String myTopic = "topic";//订阅的topic
-    private String clientId = "test1";//不同客户端需要修改值
-
-    private Callback callback;
-    public interface Callback{
-        void resultMsg(MQTTMessage msg);
-    }
+    private String host = "tcp://36.152.128.5:1883";//真机，实际是电脑端服务器部署的ip地址，不是手机的ip地址
+    private String userName = "3gB3fjut24PpSRYXXDRD";
+    private String passWord = null;
+    private static String myTopic = "v1/devices/me/attributes";//订阅的topic
+    private String clientId = "RobotTwo";//不同客户端需要修改值
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -58,7 +55,7 @@ public class MQTTService extends Service {
         String uri = host;
         client = new MqttAndroidClient(this, uri, clientId);
         // 设置MQTT监听并且接受消息
-        MqttHandleMsg mqttHandleMsg = new MqttHandleMsg();
+        MqttHandleMsg mqttHandleMsg = new MqttHandleMsg(this);
 
         client.setCallback(mqttHandleMsg);
 
@@ -66,13 +63,13 @@ public class MQTTService extends Service {
         // 清除缓存
         conOpt.setCleanSession(true);
         // 设置超时时间，单位：秒
-        conOpt.setConnectionTimeout(10);
+        conOpt.setConnectionTimeout(20);
         // 心跳包发送间隔，单位：秒
         conOpt.setKeepAliveInterval(20);
         // 用户名
         conOpt.setUserName(userName);
         // 密码
-        conOpt.setPassword(passWord.toCharArray());
+        //conOpt.setPassword(passWord.toCharArray());
 
         // last will message
         boolean doConnect = true;
@@ -80,7 +77,7 @@ public class MQTTService extends Service {
         String topic = myTopic;
         Integer qos = 0;
         Boolean retained = false;
-        if ((!message.equals("")) || (!topic.equals(""))) {
+        /*if ((!message.equals("")) || (!topic.equals(""))) {
             try {
                 //如果项目中需要知道客户端是否掉线可以调用该方法。设置最终端口的通知消息
                 conOpt.setWill(topic, message.getBytes(), qos.intValue(), retained.booleanValue());
@@ -89,7 +86,7 @@ public class MQTTService extends Service {
                 doConnect = false;
                 iMqttActionListener.onFailure(null, e);
             }
-        }
+        }*/
         if (doConnect) {
             doClientConnection();
         }
@@ -122,10 +119,13 @@ public class MQTTService extends Service {
     private IMqttActionListener iMqttActionListener = new IMqttActionListener() {
         @Override
         public void onSuccess(IMqttToken arg0) {
-            Log.i(TAG, "连接成功 ");
+            Log.i(TAG, "MQTT1111 连接成功 ");
             try {
                 // 订阅myTopic话题
                 client.subscribe(myTopic, 1);
+                Intent intentServer = new Intent(MQTTService.this, KeepAliveService.class);
+                stopService(intentServer);
+                startService(intentServer);
             } catch (MqttException e) {
                 e.printStackTrace();
             }
@@ -133,34 +133,12 @@ public class MQTTService extends Service {
 
         @Override
         public void onFailure(IMqttToken arg0, Throwable arg1) {
-            arg1.printStackTrace();
             // 连接失败，重连
+            Log.i(TAG, "MQTT1111连接失败：" + arg1.getLocalizedMessage());
+            Log.i(TAG, "MQTT1111连接失败：" + arg1.getMessage());
+            arg1.printStackTrace();
         }
     };
-
-//    // MQTT监听并且接受消息
-//    private MqttCallback mqttCallback = new MqttCallback() {
-//        @Override
-//        public void messageArrived(String topic, MqttMessage message) throws Exception {
-//            String str1 = new String(message.getPayload());
-//            MQTTMessage msg = new MQTTMessage();
-//            msg.setMessage(str1);
-//            //EventBus.getDefault().post(msg);
-//            callback.resultMsg(msg);
-//            String str2 = topic + ";qos:" + message.getQos() + ";retained:" + message.isRetained();
-//            Log.i(TAG, "messageArrived:" + str1);
-//            Log.i(TAG, str2);
-//        }
-//
-//        @Override
-//        public void deliveryComplete(IMqttDeliveryToken arg0) {
-//        }
-//
-//        @Override
-//        public void connectionLost(Throwable arg0) {
-//            // 失去连接，重连
-//        }
-//    };
 
     /**
      * 判断网络是否连接
@@ -170,10 +148,10 @@ public class MQTTService extends Service {
         NetworkInfo info = connectivityManager.getActiveNetworkInfo();
         if (info != null && info.isAvailable()) {
             String name = info.getTypeName();
-            Log.i(TAG, "MQTT当前网络名称：" + name);
+            Log.i(TAG, "MQTT1111当前网络名称：" + name);
             return true;
         } else {
-            Log.i(TAG, "MQTT 没有可用网络");
+            Log.i(TAG, "MQTT1111 没有可用网络");
             return false;
         }
     }

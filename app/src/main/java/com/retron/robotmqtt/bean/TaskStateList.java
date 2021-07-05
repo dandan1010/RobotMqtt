@@ -59,4 +59,15 @@ public class TaskStateList {
     public void setTNumber(int number) {
         this.number = number;
     }
+
+    @Override
+    public String toString() {
+        return "TaskStateList{" +
+                "number=" + number +
+                ", pointName='" + pointName + '\'' +
+                ", taskState='" + taskState + '\'' +
+                ", pointTime='" + pointTime + '\'' +
+                ", spinnerTime=" + spinnerTime +
+                '}';
+    }
 }

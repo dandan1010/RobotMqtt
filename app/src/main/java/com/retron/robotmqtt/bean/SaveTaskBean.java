@@ -28,4 +28,12 @@ public class SaveTaskBean {
     public void setPoint_time(int point_time) {
         this.point_time = point_time;
     }
+
+    @Override
+    public String toString() {
+        return "SaveTaskBean{" +
+                "point_Name='" + point_Name + '\'' +
+                ", point_time=" + point_time +
+                '}';
+    }
 }

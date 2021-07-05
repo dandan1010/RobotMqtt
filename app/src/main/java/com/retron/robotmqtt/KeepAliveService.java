@@ -39,6 +39,7 @@ import com.retron.robotmqtt.utils.Content;
 import com.retron.robotmqtt.utils.GsonUtils;
 import com.retron.robotmqtt.utils.SharedPrefUtil;
 
+import org.eclipse.paho.android.service.MqttService;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -58,9 +59,9 @@ public class KeepAliveService extends LifecycleService {
     private GsonUtils gsonUtils;
     private Gson gson;
     private JSONObject jsonObject;
-    private static TaskViewModel taskViewModel;
-    private static MapViewModel mapViewModel;
-    private static DeviceInfoViewModel deviceInfoViewModel;
+    public static TaskViewModel taskViewModel;
+    public static MapViewModel mapViewModel;
+    public static DeviceInfoViewModel deviceInfoViewModel;
     private MapListDataBean mMapListDataBean;
     private MapListDataBean currentMapListDataBean;
     private int mapListIndex = 0;
@@ -79,13 +80,11 @@ public class KeepAliveService extends LifecycleService {
         gsonUtils = new GsonUtils();
         mAlarmUtils = new AlarmUtils(mContext);
         currentMapListDataBean = new MapListDataBean();
-        Log.d(TAG,"onCreate");
+        Log.d(TAG, "onCreate");
         initModel();
         webSocket = connect();
-        Intent intent = new Intent(mContext, MQTTService.class);
-        startService(intent);
 
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.O) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
             //数字是随便写的“40”，
             nm.createNotificationChannel(new NotificationChannel("40", "App Service", NotificationManager.IMPORTANCE_DEFAULT));
@@ -126,65 +125,55 @@ public class KeepAliveService extends LifecycleService {
             @Override
             public void onClosed(@NotNull WebSocket webSocket, int code, @NotNull String reason) {
                 super.onClosed(webSocket, code, reason);
-                Log.d(TAG,"onClosed reason is " + reason);
+                Log.d(TAG, "onClosed reason is " + reason);
             }
 
             @Override
             public void onMessage(@NotNull WebSocket webSocket, @NotNull ByteString bytes) {
                 super.onMessage(webSocket, bytes);
-                Log.d(TAG,"onMessage bytes");
+                Log.d(TAG, "onMessage bytes");
                 mapViewModel.setMapBitmap(bytes.asByteBuffer());
             }
 
             @Override
             public void onOpen(@NotNull WebSocket webSocket, @NotNull Response response) {
                 super.onOpen(webSocket, response);
-                Log.d(TAG,"onOpen");
+                Log.d(TAG, "onOpen");
                 getTaskHistory();
             }
 
             @Override
             public void onClosing(WebSocket webSocket, int code, String reason) {
                 super.onClosing(webSocket, code, reason);
-                Log.d(TAG,"onClosing");
+                Log.d(TAG, "onClosing");
             }
 
             @Override
             public void onFailure(WebSocket webSocket, Throwable t, @org.jetbrains.annotations.Nullable Response response) {
                 super.onFailure(webSocket, t, response);
-                Log.d(TAG,"onFailure "  + t.getMessage());
+                Log.d(TAG, "onFailure " + t.getMessage());
             }
         });
     }
 
     private void getTaskHistory() {
         if (webSocket != null) {
-            JSONObject jsonObject = new JSONObject();
-            if (TextUtils.isEmpty(SharedPrefUtil.getInstance(mContext).getHistoryTime(Content.HISTORY_TIME))) {
-                try {
+            try {
+                JSONObject jsonObject = new JSONObject();
+                long spTime = SharedPrefUtil.getInstance(mContext).getHistoryTime(Content.HISTORY_TIME);
+                if (spTime == 0) {
                     jsonObject.put("type", Content.ROBOT_TASK_HISTORY);
-                    jsonObject.put(Content.ROBOT_TASK_DATE, mAlarmUtils.getTimeMonth(System.currentTimeMillis()));
                     Log.d(TAG, "HISTORY : " + jsonObject.toString());
                     webSocket.send(jsonObject.toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
-            } else {
-                try {
-                    jsonObject.put("type", Content.ROBOT_TASK_HISTORY);
-                    jsonObject.put(Content.ROBOT_TASK_DATE,
-                            SharedPrefUtil.getInstance(mContext).getHistoryTime(Content.HISTORY_TIME).split(" ")[0]);
-                    Log.d(TAG, "HISTORY : " + jsonObject.toString());
-                    webSocket.send(jsonObject.toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
         }
 
     }
 
-    private void handleMessage(String message){
+    private void handleMessage(String message) {
         switch (gsonUtils.getType(message)) {
             case Content.SENDMAPNAME:
                 //地图列表
@@ -218,21 +207,29 @@ public class KeepAliveService extends LifecycleService {
 //                break;
             case Content.SENDGPSPOSITION:
                 CurrentPositionDataBean currPoint = gson.fromJson(message, CurrentPositionDataBean.class);
-                Log.d(TAG, "SENDGPSPOSITION point is " + jsonObject + ", currPoint is " + currPoint);
-                deviceInfoViewModel.setCurrentPoint(currPoint);
+                Log.d(TAG, "SENDGPSPOSITION point is " + currPoint);
+                if (deviceInfoViewModel.getCurrentPoint() == null || !currPoint.toString().equals(deviceInfoViewModel.getCurrentPoint().toString())) {
+                    deviceInfoViewModel.setCurrentPoint(currPoint);
+                }
                 break;
             case Content.ROBOT_TASK_HISTORY:
                 HistoryTaskDataBean history = gson.fromJson(message, HistoryTaskDataBean.class);
-                taskViewModel.setHistoryTask(history);
+                if (taskViewModel.getHistoryTask() == null || !history.toString().equals(taskViewModel.getHistoryTask().toString())) {
+                    taskViewModel.setHistoryTask(history);
+                    //年月日 时分秒
+                }
                 break;
             case Content.ROBOT_TASK_STATE:
                 CurrentTaskDataBean currTask = gson.fromJson(message, CurrentTaskDataBean.class);
-                taskViewModel.setCurrentTask(currTask);
-                //EventBus.getDefault().post(new EventBusMessage(60001, message));
+                if (taskViewModel.getCurrentTask() == null && !currTask.toString().equals(taskViewModel.getCurrentTask().toString())) {
+                    taskViewModel.setCurrentTask(currTask);
+                }
                 break;
             case Content.GET_ALL_TASK_STATE:
                 SchedulerTaskListBean taskListBean = gson.fromJson(message, SchedulerTaskListBean.class);
-                taskViewModel.setTaskList(taskListBean);
+                if (taskViewModel.getTaskList() == null || !taskListBean.toString().equals(taskViewModel.getTaskList().toString())) {
+                    taskViewModel.setTaskList(taskListBean);
+                }
                 break;
             case Content.UPDATE:
                 //
@@ -240,16 +237,16 @@ public class KeepAliveService extends LifecycleService {
             case Content.STATUS:
                 Log.d(TAG, "Content.STATUS message is " + message);
                 RobotStatusDataBean robotStatus = gson.fromJson(message, RobotStatusDataBean.class);
-                deviceInfoViewModel.setRobotStatus(robotStatus);
+                if (deviceInfoViewModel.getRobotStatus() == null || !robotStatus.toString().equals(deviceInfoViewModel.getRobotStatus().toString())) {
+                    deviceInfoViewModel.setRobotStatus(robotStatus);
+                }
                 break;
             case Content.GET_SETTING:
                 Log.d(TAG, "Content.GET_SETTING message is " + message);
                 SettingsDataBean settings = gson.fromJson(message, SettingsDataBean.class);
-                deviceInfoViewModel.setSettings(settings);
-                break;
-            case Content.ADDPOINTPOSITION:
-                AddPointPositionDataBean currentPoints = gson.fromJson(message, AddPointPositionDataBean.class);
-                //mapViewModel.setCurrentEditMapPoint(currentPoints.getPoint());
+                if (deviceInfoViewModel.getSettings() == null || !settings.toString().equals(deviceInfoViewModel.getSettings().toString())) {
+                    deviceInfoViewModel.setSettings(settings);
+                }
                 break;
             case Content.UPDATE_FILE_LENGTH:
                 try {
@@ -261,31 +258,24 @@ public class KeepAliveService extends LifecycleService {
                 }
                 break;
             case Content.SEND_MQTT_VIRTUAL:
-                VirtualDataBean virtualDataBean = gson.fromJson(message,VirtualDataBean.class);
-                Log.d(TAG, "mapViewModel.currentMapListDataBean: " + currentMapListDataBean.getSendMapName().size());
-                Log.d("SENDMAPNAME", "4444" + mapViewModel.getMapList());
+                VirtualDataBean virtualDataBean = gson.fromJson(message, VirtualDataBean.class);
                 for (int i = 0; i < currentMapListDataBean.getSendMapName().size(); i++) {
-                    if (virtualDataBean.getMap_name_uuid().equals(currentMapListDataBean.getSendMapName().get(i).getMap_name_uuid())){
+                    if (virtualDataBean.getMap_name_uuid().equals(currentMapListDataBean.getSendMapName().get(i).getMap_name_uuid())) {
                         currentMapListDataBean.getSendMapName().get(i).setVirtualDataBeans(virtualDataBean);
-                        Log.d(TAG, "mapViewModel.virtualDataBean: " + virtualDataBean.toString());
-                        mapListIndex ++;
+                        mapListIndex++;
                     }
                 }
-                Log.d("SENDMAPNAME", "5555" + mapViewModel.getMapList());
-               // Log.d(TAG, "mapViewModel.wall: " + mMapListDataBean.getSendMapName().toString());
                 if (mapListIndex >= currentMapListDataBean.getSendMapName().size()) {
                     mapListIndex = 0;
-                    Log.d("SENDMAPNAME", "6666" + mapViewModel.getMapList());
                     ArrayList<MapListDataBean.MapDataBean> mapDataBeans = putDataBean(currentMapListDataBean);
-                    Log.d("SENDMAPNAME", "7777" + mapViewModel.getMapList());
                     if (mapViewModel.getMapList() == null || !currentMapListDataBean.toString().equals(mapViewModel.getMapList().toString())) {
                         Log.d("SENDMAPNAME", "8888" + mapViewModel.getMapList());
                         mMapListDataBean.setSendMapName(mapDataBeans);
                         mapViewModel.setMapList(mMapListDataBean);
-                    } else if (mContrast.contractVirtual(currentMapListDataBean,mapViewModel)) {
-                        Log.d("SENDMAPNAME", "1010" + mapViewModel.getMapList());
-                        mMapListDataBean.setSendMapName(mapDataBeans);
-                        mapViewModel.setMapList(mMapListDataBean);
+//                    } else if (mContrast.contractVirtual(currentMapListDataBean, mapViewModel)) {
+//                        Log.d("SENDMAPNAME", "1010" + mapViewModel.getMapList());
+//                        mMapListDataBean.setSendMapName(mapDataBeans);
+//                        mapViewModel.setMapList(mMapListDataBean);
                     }
                     Log.d("SENDMAPNAME", "1212" + mapViewModel.getMapList());
                     Log.d(TAG, "mapViewModel.wall: " + currentMapListDataBean.toString() + ", \nmodel " + mapViewModel.getMapList().toString());
@@ -296,9 +286,9 @@ public class KeepAliveService extends LifecycleService {
                 try {
                     jsonObject = new JSONObject(message);
                     String request_msg = jsonObject.getString(Content.REQUEST_MSG);
-                    if (request_msg!=null) {
-                        Log.d(TAG, "handleMessage: "+message);
-                        if (request_msg.equals("initialize_fail")||request_msg.equals("initialize_success")||request_msg.equals("initializing")) {
+                    if (request_msg != null) {
+                        Log.d(TAG, "handleMessage: " + message);
+                        if (request_msg.equals("initialize_fail") || request_msg.equals("initialize_success") || request_msg.equals("initializing")) {
                             deviceInfoViewModel.setInitStatus(request_msg);
                         }
                     }
@@ -306,13 +296,19 @@ public class KeepAliveService extends LifecycleService {
                     e.printStackTrace();
                 }
                 break;
-            case Content.DOWNLOAD_MAP:
-                DownLoadMapBean downLoadMapBean = gson.fromJson(message,DownLoadMapBean.class);
-                mapViewModel.setDownLoadMap(downLoadMapBean);
-                break;
+//            case Content.DOWNLOAD_MAP:
+//                DownLoadMapBean downLoadMapBean = gson.fromJson(message, DownLoadMapBean.class);
+//                mapViewModel.setDownLoadMap(downLoadMapBean);
+//                break;
             case Content.ROBOT_HEALTHY:
                 RobotHealthyBean robotHealthyBean = gson.fromJson(message, RobotHealthyBean.class);
-                deviceInfoViewModel.setRobotHealthy(robotHealthyBean);
+                if (deviceInfoViewModel.getRobotHealthy() == null || robotHealthyBean.toString().equals(deviceInfoViewModel.getRobotHealthy().toString())) {
+                    deviceInfoViewModel.setRobotHealthy(robotHealthyBean);
+                }
+                break;
+            case Content.ROBOT_TASK_ERROR:
+                RobotTaskErrorBean robotTaskErrorBean = gson.fromJson(message, RobotTaskErrorBean.class);
+                taskViewModel.setRobotTaskErrorBean(robotTaskErrorBean);
                 break;
             default:
                 Log.e(TAG, "NO USER MESSAGE " + message);
@@ -323,7 +319,7 @@ public class KeepAliveService extends LifecycleService {
     private ArrayList<MapListDataBean.MapDataBean> putDataBean(MapListDataBean mapListDataBean) {
         ArrayList<MapListDataBean.MapDataBean> mapDataBeans = new ArrayList<>();
         //mapDataBeans.addAll(mapList.getSendMapName());
-        for (int i = 0; i < mapListDataBean.getSendMapName().size();i++) {
+        for (int i = 0; i < mapListDataBean.getSendMapName().size(); i++) {
             MapListDataBean.MapDataBean mMap = new MapListDataBean.MapDataBean();
             ArrayList<PointDataBean> point = new ArrayList<>();
             point.addAll(mapListDataBean.getSendMapName().get(i).getPoint());
@@ -347,7 +343,7 @@ public class KeepAliveService extends LifecycleService {
     }
 
     private void initObserver() {
-        Log.d(TAG,"initObserver");
+        Log.d(TAG, "initObserver");
 //设置
         deviceInfoViewModel.settings.observeForever(new Observer<SettingsDataBean>() {
             @Override
@@ -355,6 +351,7 @@ public class KeepAliveService extends LifecycleService {
                 Log.d(TAG, "发送setting--mqtt");
             }
         });
+
         deviceInfoViewModel.robotHealthy.observeForever(new Observer<RobotHealthyBean>() {
             @Override
             public void onChanged(RobotHealthyBean robotHealthyBean) {
@@ -366,7 +363,7 @@ public class KeepAliveService extends LifecycleService {
                         jsonObject.put("type", Content.ROBOT_HEALTHY);
                         jsonObject.put(Content.REPORT_TIME, mAlarmUtils.getTime(System.currentTimeMillis()));
                         JSONObject errorMsg = new JSONObject();
-                        String message = robotHealthyBean.getRobot_healthy().replace("{","").replace("}","");
+                        String message = robotHealthyBean.getRobot_healthy().replace("{", "").replace("}", "");
                         for (int i = 0; i < message.split(",").length; i++) {
                             Log.d(TAG, "ROBOTTHREAD22 : " + message.split(",")[i]);
                             if (message.split(",")[i].endsWith("false")
@@ -388,6 +385,18 @@ public class KeepAliveService extends LifecycleService {
                 }
             }
         });
+        deviceInfoViewModel.currentPoint.observeForever(new Observer<CurrentPositionDataBean>() {
+            @Override
+            public void onChanged(CurrentPositionDataBean currentPositionDataBean) {
+                Log.d(TAG, "currentPoint: " + currentPositionDataBean.toString());
+                Log.d(TAG, "发送currentPoint--mqtt");
+                String msg = "{\"type\":\"ping\",\"address\":\"10.7.5.135\"}";
+                System.out.print("数据： " + msg + "\n");
+                    MQTTService.publish(msg);
+
+
+            }
+        });
 
 //地图列表
         mapViewModel.mapList.observeForever(new Observer<MapListDataBean>() {
@@ -405,7 +414,7 @@ public class KeepAliveService extends LifecycleService {
             public void onChanged(DownLoadMapBean downLoadMapBean) {
                 Log.d(TAG, "onChanged downLoadMap.wall: " + downLoadMapBean.toString());
                 for (int i = 0; i < mMapListDataBean.getSendMapName().size(); i++) {
-                    if (downLoadMapBean.getMap_Name_uuid().equals(mMapListDataBean.getSendMapName().get(i).getMap_name_uuid())){
+                    if (downLoadMapBean.getMap_Name_uuid().equals(mMapListDataBean.getSendMapName().get(i).getMap_name_uuid())) {
                         mMapListDataBean.getSendMapName().get(i).setDownLoadMapBean(downLoadMapBean);
                     }
                 }
@@ -435,10 +444,22 @@ public class KeepAliveService extends LifecycleService {
         taskViewModel.history.observeForever(new Observer<HistoryTaskDataBean>() {
             @Override
             public void onChanged(HistoryTaskDataBean historyTaskDataBean) {
-                Log.d(TAG, "发送history--mqtt" + historyTaskDataBean.toString());
+                long time = SharedPrefUtil.getInstance(mContext).getHistoryTime(Content.HISTORY_TIME);
+                if (time == 0) {
+                    SharedPrefUtil.getInstance(mContext).setHistoryTime(Content.HISTORY_TIME, System.currentTimeMillis());
+                    Log.d(TAG, "发送history time = 0--mqtt" + historyTaskDataBean.toString());
+                } else {
+                    ArrayList<HistoryTaskDataBean.RobotHistoryTask> robot_task_history = historyTaskDataBean.getRobot_task_history();
+                    for (int i = 0; i < robot_task_history.size(); i++) {
+                        long timestamp = mAlarmUtils.stringToTimestamp(robot_task_history.get(i).getDate());
+                        if (timestamp >= time) {
+                            SharedPrefUtil.getInstance(mContext).setHistoryTime(Content.HISTORY_TIME, System.currentTimeMillis());
+                            Log.d(TAG, "发送history--mqtt" + robot_task_history.get(i).toString());
+                        }
+                    }
+                }
             }
         });
-
     }
 
 }

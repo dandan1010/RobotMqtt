@@ -158,7 +158,8 @@ public class HistoryTaskDataBean implements Serializable {
         }
 
         @Override
-        public String toString() {
+        public String
+        toString() {
             return "RobotHistoryTask{" +
                     "dbTaskMapName='" + dbTaskMapName + '\'' +
                     ", taskName='" + taskName + '\'' +
