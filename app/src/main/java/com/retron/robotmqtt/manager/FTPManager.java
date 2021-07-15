@@ -50,7 +50,7 @@ public class FTPManager {
         ftpClient.setDataTimeout(20000);//设置连接超时时间
         ftpClient.setControlEncoding("utf-8");
         try {
-            ftpClient.connect("ftp://58.240.254.188", 10021);
+            ftpClient.connect("58.240.254.188", 10021);
             if (FTPReply.isPositiveCompletion(ftpClient.getReplyCode())) {
                 if (ftpClient.login("njdc", "njdc")) {
                     bool = true;

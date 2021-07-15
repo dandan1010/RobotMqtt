@@ -1,6 +1,7 @@
 package com.retron.robotmqtt.manager;
 
 import android.content.Context;
+import android.nfc.Tag;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
@@ -21,6 +22,8 @@ import com.retron.robotmqtt.utils.Content;
 import com.retron.robotmqtt.utils.GsonUtils;
 import com.retron.robotmqtt.utils.Md5Utils;
 import com.retron.robotmqtt.utils.SharedPrefUtil;
+
+import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -270,59 +273,59 @@ public class HandlerThreadManager implements Handler.Callback {
             Log.d("地图", "循环aaa ： ");
             List<Integer> index = new ArrayList<>();
 //            if (arrayList.size() >= mapListDataBean.getSendMapName().size()) {
-                for (int i = 0; i < arrayList.size(); i++) {
-                    for (int j = 0; j < mapListDataBean.getSendMapName().size(); j++) {
-                        Log.d("地图", "循环 ： " + (arrayList.get(i).getMap_name_uuid().equals(mapListDataBean.getSendMapName().get(j).getMap_name_uuid())));
-                        if (arrayList.get(i).getMap_name_uuid().equals(mapListDataBean.getSendMapName().get(j).getMap_name_uuid())) {
-                            MapListDataChangeBean mapListDataChangeBean = new MapListDataChangeBean();
-                            if (!arrayList.get(i).getMap_name().equals(mapListDataBean.getSendMapName().get(j).getMap_name())) {
-                                //修改地图名字
-                                Log.d("地图", renameMapName + ",修改地图名字为： " + arrayList.get(i).getMap_name()
-                                        + ",   " + mapListDataBean.getSendMapName().get(j).getMap_name());
-                                mapListDataChangeBean.setType(renameMapName);
-                            } else {
-                                mapListDataChangeBean.setType("aaa");
-                            }
-                            index.add(j);
-                            MapListDataChangeBean.MapDataBean mapDataBean = new MapListDataChangeBean.MapDataBean();
-                            mapDataBean.setPoint(contrastPoint(arrayList.get(i).getPoint(), mapListDataBean.getSendMapName().get(j).getPoint(), mapListDataChangeBean));
-                            mapDataBean.setVirtualDataBeans(mapListDataBean.getSendMapName().get(j).getVirtualDataBeans());
-                            mapDataBean.setMap_name_uuid(mapListDataBean.getSendMapName().get(j).getMap_name_uuid());
-                            mapDataBean.setMap_name(mapListDataBean.getSendMapName().get(j).getMap_name());
-                            mapListDataChangeBean.setMapDataBean(mapDataBean);
-                            changeBeans.add(mapListDataChangeBean);
-                            break;
-                        } else if (j == mapListDataBean.getSendMapName().size() - 1) {
-                            //删除地图 arrayList.get(i)
-                            Log.d("地图", deleteMapName + ",删除地图1111" + arrayList.get(i).getMap_name() + ",    " + arrayList.get(i).getMap_name_uuid());
-                            MapListDataChangeBean mapListDataChangeBean = new MapListDataChangeBean();
-                            mapListDataChangeBean.setType(deleteMapName);
-                            MapListDataChangeBean.MapDataBean mapDataBean = new MapListDataChangeBean.MapDataBean();
-                            mapDataBean.setPoint(contrastPoint(arrayList.get(i).getPoint(), mapListDataBean.getSendMapName().get(j).getPoint(), mapListDataChangeBean));
-                            mapDataBean.setVirtualDataBeans(mapListDataBean.getSendMapName().get(j).getVirtualDataBeans());
-                            mapDataBean.setMap_name_uuid(arrayList.get(i).getMap_name_uuid());
-                            mapDataBean.setMap_name(arrayList.get(i).getMap_name());
-                            mapListDataChangeBean.setMapDataBean(mapDataBean);
-                            changeBeans.add(mapListDataChangeBean);
-                        }
-                    }
-                }
+            for (int i = 0; i < arrayList.size(); i++) {
                 for (int j = 0; j < mapListDataBean.getSendMapName().size(); j++) {
-                    if (!index.contains(j)) {
-                        Log.d("地图", addMapName + ",添加地图" + mapListDataBean.getSendMapName().get(j).getMap_name());
+                    Log.d("地图", "循环 ： " + (arrayList.get(i).getMap_name_uuid().equals(mapListDataBean.getSendMapName().get(j).getMap_name_uuid())));
+                    if (arrayList.get(i).getMap_name_uuid().equals(mapListDataBean.getSendMapName().get(j).getMap_name_uuid())) {
                         MapListDataChangeBean mapListDataChangeBean = new MapListDataChangeBean();
-                        mapListDataChangeBean.setType(addMapName);
+                        if (!arrayList.get(i).getMap_name().equals(mapListDataBean.getSendMapName().get(j).getMap_name())) {
+                            //修改地图名字
+                            Log.d("地图", renameMapName + ",修改地图名字为： " + arrayList.get(i).getMap_name()
+                                    + ",   " + mapListDataBean.getSendMapName().get(j).getMap_name());
+                            mapListDataChangeBean.setType(renameMapName);
+                        } else {
+                            mapListDataChangeBean.setType("aaa");
+                        }
+                        index.add(j);
                         MapListDataChangeBean.MapDataBean mapDataBean = new MapListDataChangeBean.MapDataBean();
-                        mapDataBean.setPoint(contrastPoint(null, mapListDataBean.getSendMapName().get(j).getPoint(), mapListDataChangeBean));
+                        mapDataBean.setPoint(contrastPoint(arrayList.get(i).getPoint(), mapListDataBean.getSendMapName().get(j).getPoint(), mapListDataChangeBean));
                         mapDataBean.setVirtualDataBeans(mapListDataBean.getSendMapName().get(j).getVirtualDataBeans());
                         mapDataBean.setMap_name_uuid(mapListDataBean.getSendMapName().get(j).getMap_name_uuid());
                         mapDataBean.setMap_name(mapListDataBean.getSendMapName().get(j).getMap_name());
                         mapListDataChangeBean.setMapDataBean(mapDataBean);
                         changeBeans.add(mapListDataChangeBean);
+                        break;
+                    } else if (j == mapListDataBean.getSendMapName().size() - 1) {
+                        //删除地图 arrayList.get(i)
+                        Log.d("地图", deleteMapName + ",删除地图1111" + arrayList.get(i).getMap_name() + ",    " + arrayList.get(i).getMap_name_uuid());
+                        MapListDataChangeBean mapListDataChangeBean = new MapListDataChangeBean();
+                        mapListDataChangeBean.setType(deleteMapName);
+                        MapListDataChangeBean.MapDataBean mapDataBean = new MapListDataChangeBean.MapDataBean();
+                        mapDataBean.setPoint(contrastPoint(arrayList.get(i).getPoint(), mapListDataBean.getSendMapName().get(j).getPoint(), mapListDataChangeBean));
+                        mapDataBean.setVirtualDataBeans(mapListDataBean.getSendMapName().get(j).getVirtualDataBeans());
+                        mapDataBean.setMap_name_uuid(arrayList.get(i).getMap_name_uuid());
+                        mapDataBean.setMap_name(arrayList.get(i).getMap_name());
+                        mapListDataChangeBean.setMapDataBean(mapDataBean);
+                        changeBeans.add(mapListDataChangeBean);
                     }
                 }
-                index.clear();
             }
+            for (int j = 0; j < mapListDataBean.getSendMapName().size(); j++) {
+                if (!index.contains(j)) {
+                    Log.d("地图", addMapName + ",添加地图" + mapListDataBean.getSendMapName().get(j).getMap_name());
+                    MapListDataChangeBean mapListDataChangeBean = new MapListDataChangeBean();
+                    mapListDataChangeBean.setType(addMapName);
+                    MapListDataChangeBean.MapDataBean mapDataBean = new MapListDataChangeBean.MapDataBean();
+                    mapDataBean.setPoint(contrastPoint(null, mapListDataBean.getSendMapName().get(j).getPoint(), mapListDataChangeBean));
+                    mapDataBean.setVirtualDataBeans(mapListDataBean.getSendMapName().get(j).getVirtualDataBeans());
+                    mapDataBean.setMap_name_uuid(mapListDataBean.getSendMapName().get(j).getMap_name_uuid());
+                    mapDataBean.setMap_name(mapListDataBean.getSendMapName().get(j).getMap_name());
+                    mapListDataChangeBean.setMapDataBean(mapDataBean);
+                    changeBeans.add(mapListDataChangeBean);
+                }
+            }
+            index.clear();
+        }
         childHandler.sendEmptyMessage(1);
     }
 
@@ -334,9 +337,39 @@ public class HandlerThreadManager implements Handler.Callback {
         Log.d("地图22", addPosition + ",删除旧点：" + (pointModel == null)
                 + ",  " + pointModel.size()
                 + ",    " + point.size());
-        if (pointModel == null || pointModel.size() == 0) {
+        for (int i = 0; i < pointModel.size(); i++) {
             for (int j = 0; j < point.size(); j++) {
-                Log.d("地图22", "进入循环----" + j);
+                if (pointModel.get(i).getPoint_Name().equals(point.get(j).getPoint_Name())) {
+                    Log.d("地图：", "点内容" + pointModel.get(i).toString().equals(point.get(j).toString()));
+                    if (!pointModel.get(i).toString().equals(point.get(j).toString())) {//内容不一样，删除之前的点新加
+                        ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
+                        pointDataBean.setType(addPosition);
+                        pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
+                        pointDataBean.setPoint_type(point.get(j).getPoint_type());
+                        pointDataBean.setPoint_time(point.get(j).getPoint_time());
+                        pointDataBean.setPoint_x(point.get(j).getPoint_x());
+                        pointDataBean.setPoint_y(point.get(j).getPoint_y());
+                        pointDataBean.setAngle(point.get(j).getAngle());
+                        dataBeans.add(pointDataBean);
+                        ContrastPointDataBean pointDataBean1 = new ContrastPointDataBean();
+                        pointDataBean1.setType(deletePosition);
+                        pointDataBean.setPoint_Name(pointModel.get(i).getPoint_Name());
+                        dataBeans.add(pointDataBean1);
+                        Log.d("地图22", addPosition + ",删除旧点：" + pointModel.get(i).getPoint_Name() + ",  添加新点:  " + point.get(j).getPoint_Name());
+                    }
+                    index.add(j);
+                    break;
+                } else if (j == point.size() - 1) {
+                    ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
+                    pointDataBean.setType(deletePosition);
+                    pointDataBean.setPoint_Name(pointModel.get(i).getPoint_Name());
+                    dataBeans.add(pointDataBean);
+                    Log.d("地图333", deletePosition + ",删除旧点：" + pointModel.get(i).getPoint_Name());
+                }
+            }
+        }
+        for (int j = 0; j < point.size(); j++) {
+            if (!index.contains(j)) {
                 ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
                 pointDataBean.setType(addPosition);
                 pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
@@ -346,53 +379,7 @@ public class HandlerThreadManager implements Handler.Callback {
                 pointDataBean.setPoint_y(point.get(j).getPoint_y());
                 pointDataBean.setAngle(point.get(j).getAngle());
                 dataBeans.add(pointDataBean);
-                Log.d("地图 4444", addPosition + ",添加点：" + point.get(j).getPoint_Name());
-            }
-        } else /*if (pointModel.size() >= point.size())*/ {//删除点
-            for (int i = 0; i < pointModel.size(); i++) {
-                for (int j = 0; j < point.size(); j++) {
-                    if (pointModel.get(i).getPoint_Name().equals(point.get(j).getPoint_Name())) {
-                        Log.d("地图：" , "点内容" + pointModel.get(i).toString().equals(point.get(j).toString()));
-                        if (!pointModel.get(i).toString().equals(point.get(j).toString())) {//内容不一样，删除之前的点新加
-                            ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
-                            pointDataBean.setType(addPosition);
-                            pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
-                            pointDataBean.setPoint_type(point.get(j).getPoint_type());
-                            pointDataBean.setPoint_time(point.get(j).getPoint_time());
-                            pointDataBean.setPoint_x(point.get(j).getPoint_x());
-                            pointDataBean.setPoint_y(point.get(j).getPoint_y());
-                            pointDataBean.setAngle(point.get(j).getAngle());
-                            dataBeans.add(pointDataBean);
-                            ContrastPointDataBean pointDataBean1 = new ContrastPointDataBean();
-                            pointDataBean1.setType(deletePosition);
-                            pointDataBean.setPoint_Name(pointModel.get(i).getPoint_Name());
-                            dataBeans.add(pointDataBean1);
-                            Log.d("地图22", addPosition + ",删除旧点：" + pointModel.get(i).getPoint_Name() + ",  添加新点:  " + point.get(j).getPoint_Name());
-                        }
-                        index.add(j);
-                        break;
-                    } else if (j == point.size() - 1) {
-                        ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
-                        pointDataBean.setType(deletePosition);
-                        pointDataBean.setPoint_Name(pointModel.get(i).getPoint_Name());
-                        dataBeans.add(pointDataBean);
-                        Log.d("地图333", deletePosition + ",删除旧点：" + pointModel.get(i).getPoint_Name());
-                    }
-                }
-            }
-            for (int j = 0; j < point.size(); j++) {
-                if (!index.contains(j)) {
-                    ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
-                    pointDataBean.setType(addPosition);
-                    pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
-                    pointDataBean.setPoint_type(point.get(j).getPoint_type());
-                    pointDataBean.setPoint_time(point.get(j).getPoint_time());
-                    pointDataBean.setPoint_x(point.get(j).getPoint_x());
-                    pointDataBean.setPoint_y(point.get(j).getPoint_y());
-                    pointDataBean.setAngle(point.get(j).getAngle());
-                    dataBeans.add(pointDataBean);
-                    Log.d("地图4444", addPosition + ",添加点：" + pointModel.get(j).getPoint_Name());
-                }
+                Log.d("地图4444", addPosition + ",添加点：" + pointModel.get(j).getPoint_Name());
             }
             index.clear();
         }
@@ -487,8 +474,49 @@ public class HandlerThreadManager implements Handler.Callback {
 
 
     public void contrastTaskList(SchedulerTaskListBean taskListBean) {
+        Log.d("contrastTaskList", taskListBean.toString());
         SchedulerTaskListBean taskListModel = KeepAliveService.taskViewModel.getTaskList();
-
+        ArrayList<Integer> index = new ArrayList<>();
+        for (int i = 0; i < taskListModel.getSchedulerTaskBeanList().size(); i++) {
+            Log.d("contrastTaskList", taskListModel.getSchedulerTaskBeanList().size()
+                    + ",    " + taskListBean.getSchedulerTaskBeanList().size());
+            for (int j = 0; j < taskListBean.getSchedulerTaskBeanList().size(); j++) {
+                if (taskListModel.getSchedulerTaskBeanList().get(i).toString()
+                        .equals(taskListBean.getSchedulerTaskBeanList().get(j).toString())) {
+                    Log.d("contrastTaskList", "任务相同");
+                    index.add(j);
+                    break;
+                } else if (j == taskListBean.getSchedulerTaskBeanList().size() - 1) {
+                    Log.d("contrastTaskList", "删除任务" + taskListModel.getSchedulerTaskBeanList().get(i).getDbAlarmTime());
+                    KeepAliveService.webSocket.send(gsonUtils.deleteTask(
+                            Content.DELETETASKQUEUE,
+                            taskListModel.getSchedulerTaskBeanList().get(i).getMap_name_uuid(),
+                            taskListModel.getSchedulerTaskBeanList().get(i).getMap_name(),
+                            taskListModel.getSchedulerTaskBeanList().get(i).getTask_Name()));
+                }
+            }
+        }
+        for (int j = 0; j < taskListBean.getSchedulerTaskBeanList().size(); j++) {
+            if (!index.contains(j)) {
+                String[] split = taskListBean.getSchedulerTaskBeanList().get(j).getDbAlarmCycle().split(",");
+                List<String> cycle = new ArrayList<>();
+                for (int k = 0; k < split.length; k++) {
+                    if (!TextUtils.isEmpty(split[k])) {
+                        cycle.add(split[k]);
+                    }
+                }
+                Log.d("contrastTaskList", "添加任务" + taskListBean.getSchedulerTaskBeanList().get(j).getDbAlarmTime());
+                Log.d("contrastTaskList", "添加任务" + taskListBean.getSchedulerTaskBeanList().get(j).getPoint().toString());
+                String putSaveTaskMsg = gsonUtils.putSaveTaskMsg(taskListBean.getSchedulerTaskBeanList().get(j).getMap_name(),
+                        taskListBean.getSchedulerTaskBeanList().get(j).getMap_name_uuid(),
+                        taskListBean.getSchedulerTaskBeanList().get(j).getTask_Name(),
+                        taskListBean.getSchedulerTaskBeanList().get(j).getDbAlarmTime(),
+                        "" + taskListBean.getSchedulerTaskBeanList().get(j).isDbAlarmIsRun(),
+                        taskListBean.getSchedulerTaskBeanList().get(j).getPoint(),
+                        cycle);
+                KeepAliveService.webSocket.send(putSaveTaskMsg);
+            }
+        }
     }
 
     @Override
@@ -498,11 +526,10 @@ public class HandlerThreadManager implements Handler.Callback {
                 checkMapList();
                 break;
             case 2:
-//                uploadFile("/sdcard/robotMap/" + (String) msg.obj + ".tar.gz");
 //                FTPManager.getInstance(mContext).connect();
 //                FTPManager.getInstance(mContext).uploadFile(
 //                        "/sdcard/robotMap/" + (String) msg.obj + ".tar.gz",
-//                        "ftp://58.240.254.188:10021/robotMap");
+//                        "robotMap/");
 //                FTPManager.getInstance(mContext).closeFTP();
                 break;
             case 3:

@@ -5,6 +5,7 @@ import android.util.Log;
 import com.retron.robotmqtt.bean.ContrastPointDataBean;
 import com.retron.robotmqtt.bean.DrawLineBean;
 import com.retron.robotmqtt.bean.MapListDataChangeBean;
+import com.retron.robotmqtt.bean.PointDataBean;
 import com.retron.robotmqtt.bean.SaveTaskBean;
 import com.retron.robotmqtt.bean.VirtualDataBean;
 import com.retron.robotmqtt.bean.VirtualDataChangeBean;
@@ -209,7 +210,7 @@ public class GsonUtils {
         return jsonObject.toString();
     }
 
-    public String putSaveTaskMsg(String mapName, String mapUid, String taskName, String taskTime,String isRun, JSONArray tasks, List<String> repeatDays){
+    public String putSaveTaskMsg(String mapName, String mapUid, String taskName, String taskTime, String isRun, List<PointDataBean> tasks, List<String> repeatDays){
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put(TYPE, Content.SAVETASKQUEUE);
@@ -218,8 +219,20 @@ public class GsonUtils {
             jsonObject.put(Content.TASK_NAME, taskName);
             jsonObject.put(Content.dbAlarmTime, taskTime);
             jsonObject.put(Content.dbAlarmIsRun, isRun);
-            jsonObject.put(Content.SAVETASKQUEUE, tasks);
-
+            JSONArray jsonTask = new JSONArray();
+            if (tasks != null && tasks.size() != 0) {
+                for (int i = 0; i < tasks.size(); i++) {
+                    JSONObject object = new JSONObject();
+                    object.put(Content.POINT_NAME, tasks.get(i).getPoint_Name());
+                    object.put(Content.POINT_X, tasks.get(i).getPoint_x());
+                    object.put(Content.POINT_Y, tasks.get(i).getPoint_y());
+                    object.put(Content.ANGLE, tasks.get(i).getAngle());
+                    object.put(Content.POINT_TYPE, tasks.get(i).getPoint_type());
+                    object.put(Content.POINT_TIME, tasks.get(i).getPoint_time());
+                    jsonTask.put(object);
+                }
+            }
+            jsonObject.put(Content.SAVETASKQUEUE, jsonTask);
             if (repeatDays != null) {
                 JSONArray jsonArray = new JSONArray();
                 for (int i = 0; i < repeatDays.size(); i++) {
@@ -227,6 +240,20 @@ public class GsonUtils {
                 }
                 jsonObject.put(Content.dbAlarmCycle, jsonArray);
             }
+        }catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject.toString();
+    }
+
+    public String deleteTask(String deletetaskqueue, String map_name_uuid, String map_name, String task_name) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put(TYPE, deletetaskqueue);
+            jsonObject.put(Content.MAP_NAME, mapName);
+            jsonObject.put(Content.MAP_NAME_UUID, map_name_uuid);
+            jsonObject.put(Content.TASK_NAME, task_name);
+            jsonObject.put(Content.MAP_NAME, map_name);
         }catch (JSONException e) {
             e.printStackTrace();
         }

@@ -56,6 +56,7 @@ public final class Content {
     public static final String POINT = "point";//是否是定时任务
     public static final String STARTMOVE = "startMove";//机器人移动
     public static final String GETMAPLIST = "getMapList";//请求地图列表
+    public static final String DELETETASKQUEUE = "deleteTaskQueue";//删除任务队列
 
 
     public static final String UPDATE_FILE_LENGTH = "update_file_length";//for ota

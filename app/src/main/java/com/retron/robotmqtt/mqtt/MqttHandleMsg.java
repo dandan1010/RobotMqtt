@@ -69,28 +69,11 @@ public class MqttHandleMsg implements MqttCallback {
                     KeepAliveService.webSocket.send(jsonParams.toString());
                     break;
                 case Content.sync_task_list:
-                    jsonArray = jsonParams.getJSONArray("task");
-                    SchedulerTaskListBean taskListBean = mGson.fromJson(params, SchedulerTaskListBean.class);
-                    HandlerThreadManager.getInstance(mContext).contrastTaskList(taskListBean);
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        Log.d(TAG, "SAVETASKQUEUE : " + jsonArray.get(i).toString());
-                        JSONObject object = jsonArray.getJSONObject(i);
-                        List<String> list = new ArrayList<>();
-                        String[] split = object.getString(Content.dbAlarmCycle).split(",");
-                        for (int j = 0; j < split.length; j++) {
-                            if (!TextUtils.isEmpty(split[j])) {
-                                list.add(split[j]);
-                            }
-                        }
-                        String putSaveTaskMsg = mGsonUtils.putSaveTaskMsg(object.getString(Content.MAP_NAME),
-                                object.getString(Content.MAP_NAME_UUID),
-                                object.getString(Content.TASK_NAME),
-                                object.getString(Content.dbAlarmTime),
-                                object.getString(Content.dbAlarmIsRun),
-                                object.getJSONArray(Content.POINT),
-                                list);
-                        KeepAliveService.webSocket.send(putSaveTaskMsg);
-                    }
+//                    jsonArray = jsonParams.getJSONArray("task");
+//                    for (int i = 0;i<jsonArray.length();i++) {
+                        SchedulerTaskListBean taskListBean = mGson.fromJson(params, SchedulerTaskListBean.class);
+                        HandlerThreadManager.getInstance(mContext).contrastTaskList(taskListBean);
+//                    }
                     break;
                 case Content.syncSetting:
                     KeepAliveService.webSocket.send(params);
