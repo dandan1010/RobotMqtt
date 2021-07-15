@@ -7,6 +7,7 @@ import android.content.Intent;
 
 import java.sql.Timestamp;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -48,18 +49,16 @@ public class AlarmUtils {
     }
 
     //时间转为时间戳
-    public long stringToTimestamp(String time){
-        long times = 0;
-        try {
-            times = (long) ((Timestamp.valueOf(time).getTime())/1000);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if(times==0){
-            System.out.println("String转10位时间戳失败");
-        }
-        return times;
-
+        public static long stringToTimestamp(String dateString) {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date date = new Date();
+            try{
+                date = dateFormat.parse(dateString);
+            } catch(ParseException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            return date.getTime();
     }
 
 }

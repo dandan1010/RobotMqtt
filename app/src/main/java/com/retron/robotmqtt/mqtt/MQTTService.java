@@ -28,10 +28,11 @@ public class MQTTService extends Service {
     private MqttConnectOptions conOpt;
     //    private String host = "tcp://10.0.2.2:61613";//模拟器
     private String host = "tcp://36.152.128.5:1883";//真机，实际是电脑端服务器部署的ip地址，不是手机的ip地址
-    private String userName = "3gB3fjut24PpSRYXXDRD";
-    private String passWord = null;
-    private static String myTopic = "v1/devices/me/attributes";//订阅的topic
-    private String clientId = "RobotTwo";//不同客户端需要修改值
+    private String userName = "7HJqCiVjzKN1p2iSW6AJ";
+    private static String attributesTopic = "v1/devices/me/attributes";//订阅的topic
+    private static String telemetryTopic ="v1/devices/me/telemetry";
+    private static String rpcTopic ="v1/devices/me/rpc/request/+";
+    private String clientId = "";//不同客户端需要修改值
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -40,11 +41,19 @@ public class MQTTService extends Service {
     }
 
     public static void publish(String msg) {
-        String topic = myTopic;
         Integer qos = 0;
         Boolean retained = false;
         try {
-            client.publish(topic, msg.getBytes(), qos.intValue(), retained.booleanValue());
+            client.publish(attributesTopic, msg.getBytes(), qos.intValue(), retained.booleanValue());
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void publishTelemetry(String msg) {
+        Integer qos = 1;
+        Boolean retained = false;
+        try {
+            client.publish(telemetryTopic, msg.getBytes(), qos.intValue(), retained.booleanValue());
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -73,20 +82,6 @@ public class MQTTService extends Service {
 
         // last will message
         boolean doConnect = true;
-        String message = "{\"terminal_uid\":\"" + clientId + "\"}";
-        String topic = myTopic;
-        Integer qos = 0;
-        Boolean retained = false;
-        /*if ((!message.equals("")) || (!topic.equals(""))) {
-            try {
-                //如果项目中需要知道客户端是否掉线可以调用该方法。设置最终端口的通知消息
-                conOpt.setWill(topic, message.getBytes(), qos.intValue(), retained.booleanValue());
-            } catch (Exception e) {
-                Log.i(TAG, "Exception Occured", e);
-                doConnect = false;
-                iMqttActionListener.onFailure(null, e);
-            }
-        }*/
         if (doConnect) {
             doClientConnection();
         }
@@ -122,7 +117,9 @@ public class MQTTService extends Service {
             Log.i(TAG, "MQTT1111 连接成功 ");
             try {
                 // 订阅myTopic话题
-                client.subscribe(myTopic, 1);
+                client.subscribe(attributesTopic, 0);
+                client.subscribe(telemetryTopic, 1);
+                client.subscribe(rpcTopic, 2);
                 Intent intentServer = new Intent(MQTTService.this, KeepAliveService.class);
                 stopService(intentServer);
                 startService(intentServer);

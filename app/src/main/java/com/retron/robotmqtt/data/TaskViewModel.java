@@ -6,7 +6,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
 
-import com.retron.robotmqtt.bean.CurrentTaskDataBean;
+import com.retron.robotmqtt.bean.RobotTaskDataBean;
 import com.retron.robotmqtt.bean.HistoryTaskDataBean;
 import com.retron.robotmqtt.bean.RobotTaskErrorBean;
 import com.retron.robotmqtt.bean.SchedulerTaskListBean;
@@ -14,7 +14,7 @@ import com.retron.robotmqtt.bean.SchedulerTaskListBean;
 public class TaskViewModel extends AndroidViewModel {
 
     public MutableLiveData<SchedulerTaskListBean> taskList = new MutableLiveData<>();
-    public MutableLiveData<CurrentTaskDataBean> currentTask = new MutableLiveData<>();
+    public MutableLiveData<RobotTaskDataBean> currentTask = new MutableLiveData<>();
     public MutableLiveData<HistoryTaskDataBean> history = new MutableLiveData<>();
     public MutableLiveData<RobotTaskErrorBean> taskError = new MutableLiveData<>();
 
@@ -37,11 +37,11 @@ public class TaskViewModel extends AndroidViewModel {
         this.taskList.postValue(taskList);
     }
 
-    public void setCurrentTask(CurrentTaskDataBean currentTask) {
+    public void setCurrentTask(RobotTaskDataBean currentTask) {
         this.currentTask.postValue(currentTask);
     }
 
-    public CurrentTaskDataBean getCurrentTask(){
+    public RobotTaskDataBean getCurrentTask(){
         return this.currentTask.getValue();
     }
 

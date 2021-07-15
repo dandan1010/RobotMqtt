@@ -5,7 +5,15 @@ import java.util.ArrayList;
 
 public class MapListDataChangeBean {
     private String type;
-    private ArrayList<MapListDataBean.MapDataBean> sendMapName;
+    private MapDataBean mapDataBean;
+
+    public MapDataBean getMapDataBean() {
+        return mapDataBean;
+    }
+
+    public void setMapDataBean(MapDataBean mapDataBean) {
+        this.mapDataBean = mapDataBean;
+    }
 
     public String getType() {
         return type;
@@ -13,14 +21,6 @@ public class MapListDataChangeBean {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public ArrayList<MapListDataBean.MapDataBean> getSendMapName() {
-        return sendMapName;
-    }
-
-    public void setSendMapName(ArrayList<MapListDataBean.MapDataBean> sendMapName) {
-        this.sendMapName = sendMapName;
     }
 
     public static class MapDataBean implements Serializable {
@@ -31,9 +31,46 @@ public class MapListDataChangeBean {
         private double origin_x;
         private double origin_y;
         private double resolution;
-        private ArrayList<PointDataBean> point;
+        private String map_link;
+        private String map_md5;
+        private String dump_link;
+        private String dump_md5;
+        private ArrayList<ContrastPointDataBean> point;
         private VirtualDataBean virtualDataBeans;
         private DownLoadMapBean downLoadMapBean;
+
+        public String getMap_link() {
+            return map_link;
+        }
+
+        public void setMap_link(String map_link) {
+            this.map_link = map_link;
+        }
+
+        public String getMap_md5() {
+            return map_md5;
+        }
+
+        public void setMap_md5(String map_md5) {
+            this.map_md5 = map_md5;
+        }
+
+        public String getDump_link() {
+            return dump_link;
+        }
+
+        public void setDump_link(String dump_link) {
+            this.dump_link = dump_link;
+        }
+
+        public String getDump_md5() {
+            return dump_md5;
+        }
+
+        public void setDump_md5(String dump_md5) {
+            this.dump_md5 = dump_md5;
+        }
+
 
         public String getMap_name_uuid() {
             return map_name_uuid;
@@ -91,11 +128,11 @@ public class MapListDataChangeBean {
             this.resolution = resolution;
         }
 
-        public ArrayList<PointDataBean> getPoint() {
+        public ArrayList<ContrastPointDataBean> getPoint() {
             return point;
         }
 
-        public void setPoint(ArrayList<PointDataBean> point) {
+        public void setPoint(ArrayList<ContrastPointDataBean> point) {
             this.point = point;
         }
 
@@ -115,6 +152,32 @@ public class MapListDataChangeBean {
             this.origin_y = origin_y;
         }
 
+        @Override
+        public String toString() {
+            return "MapDataBean{" +
+                    "map_name_uuid='" + map_name_uuid + '\'' +
+                    ", map_name='" + map_name + '\'' +
+                    ", grid_height=" + grid_height +
+                    ", grid_width=" + grid_width +
+                    ", origin_x=" + origin_x +
+                    ", origin_y=" + origin_y +
+                    ", resolution=" + resolution +
+                    ", map_link='" + map_link + '\'' +
+                    ", map_md5='" + map_md5 + '\'' +
+                    ", dump_link='" + dump_link + '\'' +
+                    ", dump_md5='" + dump_md5 + '\'' +
+                    ", point=" + point +
+                    ", virtualDataBeans=" + virtualDataBeans +
+                    ", downLoadMapBean=" + downLoadMapBean +
+                    '}';
+        }
     }
 
+    @Override
+    public String toString() {
+        return "MapListDataChangeBean{" +
+                "type='" + type + '\'' +
+                ", mapDataBean=" + mapDataBean +
+                '}';
+    }
 }

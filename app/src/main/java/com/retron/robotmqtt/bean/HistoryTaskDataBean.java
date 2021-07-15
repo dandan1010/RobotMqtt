@@ -83,6 +83,7 @@ public class HistoryTaskDataBean implements Serializable {
 
     public class RobotHistoryTask implements Serializable{
         /*{"dbTaskMapName":"mapmap","taskName":"1622297834383","time":"0","date":"2021-05-29 22:19","dbStartBattery":"43%","dbEndBattery":"43%","dbTaskIndex":"1"}*/
+        private String dbMapNameUuid;
         private String dbTaskMapName;
         private String taskName;
         private String time;
@@ -90,6 +91,14 @@ public class HistoryTaskDataBean implements Serializable {
         private String dbStartBattery;
         private String dbEndBattery;
         private String dbTaskIndex;
+
+        public String getDbMapNameUuid() {
+            return dbMapNameUuid;
+        }
+
+        public void setDbMapNameUuid(String dbMapNameUuid) {
+            this.dbMapNameUuid = dbMapNameUuid;
+        }
 
         public String getDbTaskPointState() {
             return dbTaskPointState;
@@ -158,10 +167,10 @@ public class HistoryTaskDataBean implements Serializable {
         }
 
         @Override
-        public String
-        toString() {
+        public String toString() {
             return "RobotHistoryTask{" +
-                    "dbTaskMapName='" + dbTaskMapName + '\'' +
+                    "dbMapNameUuid='" + dbMapNameUuid + '\'' +
+                    ", dbTaskMapName='" + dbTaskMapName + '\'' +
                     ", taskName='" + taskName + '\'' +
                     ", time='" + time + '\'' +
                     ", date='" + date + '\'' +
