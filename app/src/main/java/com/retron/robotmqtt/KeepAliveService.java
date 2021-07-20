@@ -31,6 +31,7 @@ import com.retron.robotmqtt.data.DeviceInfoViewModel;
 import com.retron.robotmqtt.data.MapViewModel;
 import com.retron.robotmqtt.data.TaskViewModel;
 import com.retron.robotmqtt.mqtt.MQTTService;
+import com.retron.robotmqtt.mqtt.MqttHandleMsg;
 import com.retron.robotmqtt.sqlite.SqLiteOpenHelperUtils;
 import com.retron.robotmqtt.utils.AlarmUtils;
 import com.retron.robotmqtt.utils.Content;
@@ -38,6 +39,7 @@ import com.retron.robotmqtt.utils.GsonUtils;
 import com.retron.robotmqtt.utils.SharedPrefUtil;
 
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -171,8 +173,9 @@ public class KeepAliveService extends LifecycleService {
                 e.printStackTrace();
             }
         }
-
-        HandlerThreadManager.getInstance(mContext).uploadMapDump("1625812880373");
+//        webSocket.send(gsonUtils.putRobotString(Content.GET_LOG_LIST,""));
+//        HandlerThreadManager.getInstance(mContext).uploadMapDump("1626761066882");
+//        HandlerThreadManager.getInstance(mContext).downloadMap("1625812703718");
     }
 
     /*public void updateMapDb(MapListDataBean mapList) {
@@ -281,9 +284,6 @@ public class KeepAliveService extends LifecycleService {
                     taskViewModel.setTaskList(taskListBean);
                 }
                 break;
-            case Content.UPDATE:
-                //
-                break;
             case Content.STATUS:
                 Log.d(TAG, "Content.STATUS message is " + message);
                 RobotStatusDataBean robotStatus = gson.fromJson(message, RobotStatusDataBean.class);
@@ -342,10 +342,6 @@ public class KeepAliveService extends LifecycleService {
                     e.printStackTrace();
                 }
                 break;
-//            case Content.DOWNLOAD_MAP:
-//                DownLoadMapBean downLoadMapBean = gson.fromJson(message, DownLoadMapBean.class);
-//                mapViewModel.setDownLoadMap(downLoadMapBean);
-//                break;
             case Content.ROBOT_HEALTHY:
                 RobotHealthyBean robotHealthyBean = gson.fromJson(message, RobotHealthyBean.class);
                 if (deviceInfoViewModel.getRobotHealthy() == null || robotHealthyBean.toString().equals(deviceInfoViewModel.getRobotHealthy().toString())) {
@@ -359,10 +355,19 @@ public class KeepAliveService extends LifecycleService {
             case Content.UPLOADMAPSYN:
                 try {
                     JSONObject jsonObject = new JSONObject(message);
-                    HandlerThreadManager.getInstance(mContext).checkAddMapPoint(jsonObject.getString(Content.MAP_NAME_UUID));
+                    if ("successed".equals(jsonObject.getString("status"))) {
+                        HandlerThreadManager.getInstance(mContext).checkAddMapPoint(jsonObject.getString(Content.MAP_NAME_UUID));
+                    }
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+                break;
+            case Content.GET_LOG_LIST:
+                Log.d(TAG, "LOG列表： " + gsonUtils.sendRobotMsg(Content.GET_LOG_LIST, message));
+                    MQTTService.publish(gsonUtils.sendRobotMsg(Content.GET_LOG_LIST, message));
+                break;
+            case Content.COMPRESSED:
+                HandlerThreadManager.getInstance(mContext).uploadLog(MqttHandleMsg.uploadLogBean);
                 break;
             default:
                 break;
@@ -427,8 +432,8 @@ public class KeepAliveService extends LifecycleService {
                         }
                         jsonObject.put(Content.ROBOT_HEALTHY, errorMsg);
                         reportHealthyTime = false;
-                        Log.d("发送deviceerror" , gsonUtils.sendRobotMsg(Content.deviceerror, jsonObject.toString()));
-                        MQTTService.publishTelemetry(gsonUtils.sendRobotMsg(Content.deviceerror, jsonObject.toString()));
+                        Log.d("发送deviceerror" , gsonUtils.sendRobotMsg(Content.device_error, jsonObject.toString()));
+                        MQTTService.publishTelemetry(gsonUtils.sendRobotMsg(Content.device_error, jsonObject.toString()));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }
@@ -478,8 +483,8 @@ public class KeepAliveService extends LifecycleService {
         taskViewModel.taskError.observeForever(new Observer<RobotTaskErrorBean>() {
             @Override
             public void onChanged(RobotTaskErrorBean taskErrorBean) {
-                Log.d(TAG, "发送taskError--mqtt" + gsonUtils.sendRobotMsg(Content.taskerror, gson.toJson(taskErrorBean)));
-                MQTTService.publishTelemetry(gsonUtils.sendRobotMsg(Content.taskerror, gson.toJson(taskErrorBean)));
+                Log.d(TAG, "发送taskError--mqtt" + gsonUtils.sendRobotMsg(Content.task_error, gson.toJson(taskErrorBean)));
+                MQTTService.publishTelemetry(gsonUtils.sendRobotMsg(Content.task_error, gson.toJson(taskErrorBean)));
             }
         });
         taskViewModel.history.observeForever(new Observer<HistoryTaskDataBean>() {

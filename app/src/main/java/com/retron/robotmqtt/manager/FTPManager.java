@@ -2,6 +2,7 @@ package com.retron.robotmqtt.manager;
 
 import android.content.Context;
 
+import com.retron.robotmqtt.mqtt.MqttHandleMsg;
 import com.retron.robotmqtt.utils.SharedPrefUtil;
 
 import java.io.File;
@@ -49,6 +50,7 @@ public class FTPManager {
         }
         ftpClient.setDataTimeout(20000);//设置连接超时时间
         ftpClient.setControlEncoding("utf-8");
+        ftpClient.enterLocalPassiveMode();
         try {
             ftpClient.connect("58.240.254.188", 10021);
             if (FTPReply.isPositiveCompletion(ftpClient.getReplyCode())) {
@@ -60,6 +62,7 @@ public class FTPManager {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        //createDirectory();
         return bool;
     }
 
@@ -101,29 +104,33 @@ public class FTPManager {
             System.out.println("本地文件不存在");
             return false;
         }
-        System.out.println("本地文件存在，名称为：" + localFile.getName());
         createDirectory(serverPath); // 如果文件夹不存在，创建文件夹
         System.out.println("服务器文件存放路径：" + serverPath + localFile.getName());
         String fileName = localFile.getName();
         // 如果本地文件存在，服务器文件也在，上传文件，这个方法中也包括了断点上传
         long localSize = localFile.length(); // 本地文件的长度
-        FTPFile[] files = new FTPFile[0];
+        FTPFile files;
         try {
-            files = ftpClient.listFiles(fileName);
-
+            System.out.println("服务器文件----aaaaa" + fileName);
+            files = ftpClient.mlistFile(fileName);
             long serverSize = 0;
-            if (files.length == 0) {
+            if (files == null || files.getSize() == 0) {
                 System.out.println("服务器文件不存在");
                 serverSize = 0;
             } else {
-                serverSize = files[0].getSize(); // 服务器文件的长度
-            }
-            if (localSize <= serverSize) {
+                System.out.println("服务器文件存在,删除文件," + fileName);
                 if (ftpClient.deleteFile(fileName)) {
                     System.out.println("服务器文件存在,删除文件,开始重新上传");
                     serverSize = 0;
                 }
+//                serverSize = files[0].getSize(); // 服务器文件的长度
             }
+//            if (localSize <= serverSize) {
+//                if (ftpClient.deleteFile(fileName)) {
+//                    System.out.println("服务器文件存在,删除文件,开始重新上传");
+//                    serverSize = 0;
+//                }
+//            }
             RandomAccessFile raf = new RandomAccessFile(localFile, "r");
             // 进度
             long step = localSize / 100;
@@ -150,7 +157,6 @@ public class FTPManager {
             output.flush();
             output.close();
             raf.close();
-
             if (ftpClient.completePendingCommand()) {
                 System.out.println("文件上传成功");
                 return true;
@@ -159,67 +165,79 @@ public class FTPManager {
             e.printStackTrace();
         }
         System.out.println("文件上传失败");
+
         return false;
     }
 
     // 实现下载文件功能，可实现断点下载
-    public synchronized boolean downloadFile(String localPath, String serverPath)
-            throws Exception {
+    public synchronized boolean downloadFile(String localPath, String serverPath, String fileName) {
         // 先判断服务器文件是否存在
-        FTPFile[] files = ftpClient.listFiles(serverPath);
-        if (files.length == 0) {
-            System.out.println("服务器文件不存在");
-            return false;
-        }
-        System.out.println("远程文件存在,名字为：" + files[0].getName());
-        localPath = localPath + files[0].getName();
-        // 接着判断下载的文件是否能断点下载
-        long serverSize = files[0].getSize(); // 获取远程文件的长度
-        File localFile = new File(localPath);
-        long localSize = 0;
-        if (localFile.exists()) {
-            localSize = localFile.length(); // 如果本地文件存在，获取本地文件的长度
-            if (localSize >= serverSize) {
-                System.out.println("文件已经下载完了");
-                File file = new File(localPath);
-                file.delete();
-                System.out.println("本地文件存在，删除成功，开始重新下载");
+        FTPFile files;
+        try {
+            files = ftpClient.mlistFile(serverPath);
+            //files = ftpClient.listFiles(serverPath);
+            if (files == null || files.getSize() == 0) {
+                System.out.println("服务器文件不存在");
                 return false;
             }
-        }
-        // 进度
-        long step = serverSize / 100;
-        long process = 0;
-        long currentSize = 0;
-        // 开始准备下载文件
-        ftpClient.enterLocalActiveMode();
-        ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-        OutputStream out = new FileOutputStream(localFile, true);
-        ftpClient.setRestartOffset(localSize);
-        InputStream input = ftpClient.retrieveFileStream(serverPath);
-        byte[] b = new byte[1024];
-        int length = 0;
-        while ((length = input.read(b)) != -1) {
-            out.write(b, 0, length);
-            currentSize = currentSize + length;
-            if (currentSize / step != process) {
-                process = currentSize / step;
-                if (process % 10 == 0) {
-                    System.out.println("下载进度：" + process);
+            System.out.println("远程文件存在,名字为：" + files.getName());
+            // 接着判断下载的文件是否能断点下载
+            long serverSize = files.getSize(); // 获取远程文件的长度
+            System.out.println("文件长度 " + serverSize);
+            File localFile = new File(localPath);
+            long localSize = 0;
+            if (localFile.exists()) {
+                localSize = localFile.length(); // 如果本地文件存在，获取本地文件的长度
+                if (localSize >= serverSize) {
+                    System.out.println("文件已经下载完了");
+                    File file = new File(localPath);
+                    file.delete();
+                    System.out.println("本地文件存在，删除成功，开始重新下载");
                 }
             }
+            // 进度
+            long step = serverSize / 100;
+            long process = 0;
+            long currentSize = 0;
+            // 开始准备下载文件
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+            localFile = new File(localPath);
+            OutputStream out = new FileOutputStream(localFile, true);
+            ftpClient.setRestartOffset(0);
+            System.out.println("远程文件地址 " + serverPath);
+            ftpClient.enterLocalPassiveMode();
+            System.out.println("远程文件流地址" + ",  " + serverPath);
+            InputStream input = ftpClient.retrieveFileStream(serverPath);
+            System.out.println("远程文件流大小 " + input.available());
+            byte[] b = new byte[1024];
+            int length = 0;
+            while ((length = input.read(b)) != -1) {
+                out.write(b, 0, length);
+                currentSize = currentSize + length;
+                if (currentSize / step != process) {
+                    process = currentSize / step;
+                    if (process % 10 == 0) {
+                        System.out.println("下载进度：" + process);
+                    }
+                }
+            }
+            out.flush();
+            out.close();
+            input.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        out.flush();
-        out.close();
-        input.close();
-        // 此方法是来确保流处理完毕，如果没有此方法，可能会造成现程序死掉
-        if (ftpClient.completePendingCommand()) {
-            System.out.println("文件下载成功");
-            return true;
-        } else {
-            System.out.println("文件下载失败");
-            return false;
+        try {
+            if (ftpClient.completePendingCommand()) {
+                System.out.println("文件下载成功");
+                MqttHandleMsg.downloadMapResult(fileName);
+                return true;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        System.out.println("文件下载失败");
+        return false;
     }
 
     // 如果ftp上传打开，就关闭掉

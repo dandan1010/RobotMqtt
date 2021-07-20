@@ -57,6 +57,12 @@ public final class Content {
     public static final String STARTMOVE = "startMove";//机器人移动
     public static final String GETMAPLIST = "getMapList";//请求地图列表
     public static final String DELETETASKQUEUE = "deleteTaskQueue";//删除任务队列
+    public static final String RESET_ROBOT = "reset_robot";//重置设备
+    public static final String STARTTASKQUEUE = "startTaskQueue";//开始任务队列
+    public static final String GET_LOG_LIST = "get_log_list";//log列表
+    public static final String MQTT_DOWNLOAD_LOG = "mqtt_download_log";//下载log
+    public static final String COMPRESSED = "compressed";
+    public static final String FILE_NAME = "file_name";
 
 
     public static final String UPDATE_FILE_LENGTH = "update_file_length";//for ota
@@ -84,8 +90,8 @@ public final class Content {
 
     //telemetry
     public static final String robotStatus = "robot_status";
-    public static final String deviceerror = "device_error";
-    public static final String taskerror = "task_error";
+    public static final String device_error = "device_error";
+    public static final String task_error = "task_error";
     public static final String gps_position = "gps_position";
 
     //RPC command type
@@ -98,6 +104,10 @@ public final class Content {
     public static final String execTask = "execute_task";
     public static final String send_map_dump = "send_map_dump";
     public static final String sync_map_dump = "sync_map_dump";
+    public static final String upload_log = "upload_log";
+    public static final String reset = "reset";
+    public static final String execute_task = "execute_task";
+    public static final String ota = "ota";
 
     public static final String data = "data";
     public static final String dump_md5 = "dump_md5";

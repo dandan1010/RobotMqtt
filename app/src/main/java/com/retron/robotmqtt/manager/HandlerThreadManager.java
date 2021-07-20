@@ -2,6 +2,7 @@ package com.retron.robotmqtt.manager;
 
 import android.content.Context;
 import android.nfc.Tag;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
@@ -17,6 +18,7 @@ import com.retron.robotmqtt.bean.MapListDataBean;
 import com.retron.robotmqtt.bean.MapListDataChangeBean;
 import com.retron.robotmqtt.bean.PointDataBean;
 import com.retron.robotmqtt.bean.SchedulerTaskListBean;
+import com.retron.robotmqtt.bean.UploadLogBean;
 import com.retron.robotmqtt.mqtt.MQTTService;
 import com.retron.robotmqtt.utils.Content;
 import com.retron.robotmqtt.utils.GsonUtils;
@@ -121,11 +123,10 @@ public class HandlerThreadManager implements Handler.Callback {
                         Log.d("threadPoolExecutor", "删除地图：" + changeBeans.get(i).getMapDataBean().getMap_name_uuid());
                         arrayList.add(changeBeans.get(i).getMapDataBean().getMap_name_uuid());
                         break;
-//                        case addMapName:
-//                            downloadUrl(changeBeans.get(i).getMapDataBean().getMap_name_uuid(),
-//                                    changeBeans.get(i).getMapDataBean().getDump_link(),
-//                                    changeBeans.get(i).getMapDataBean().getDump_md5());
-//                            break;
+                    case addMapName:
+                        Log.d("threadPoolExecutor", "addMapName：" + changeBeans.get(i).getMapDataBean().getMap_name_uuid());
+                        downloadMap(changeBeans.get(i).getMapDataBean().getMap_name_uuid(), changeBeans.get(i).getMapDataBean().getDump_md5());
+                        break;
                     default:
                         Log.d("threadPoolExecutor", "default");
                         ArrayList<ContrastPointDataBean> pointDataBeans = changeBeans.get(i).getMapDataBean().getPoint();
@@ -192,6 +193,7 @@ public class HandlerThreadManager implements Handler.Callback {
                     for (int j = 0; j < point.size(); j++) {
                         switch (point.get(j).getType()) {
                             case addPosition:
+                                Log.d("新地图添加点", point.get(j) + ",    "+ changeBeans.get(i).getMapDataBean().getMap_name_uuid());
                                 KeepAliveService.webSocket.send(gsonUtils.sendRobotMsg(
                                         Content.MQTT_ADD_POINT,
                                         changeBeans.get(i).getMapDataBean().getMap_name_uuid(),
@@ -201,48 +203,9 @@ public class HandlerThreadManager implements Handler.Callback {
                                 break;
                         }
                     }
-                    changeBeans.remove(i);
                 }
             }
-        }
-    }
-
-    public void downloadUrl(String mapNameUuid, String urlPath, String dumpMd5) {
-        URL url = null;
-        String dumpPath = "/sdcard/robotMap/" + mapNameUuid + ".tar.gz";
-        try {
-            url = new URL(urlPath);
-            HttpURLConnection urlConn = (HttpURLConnection) url.openConnection();
-            BufferedInputStream bis = new BufferedInputStream(urlConn.getInputStream());
-            FileOutputStream fos = new FileOutputStream(dumpPath);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            byte[] buf = new byte[3 * 1024];
-            int result = bis.read(buf);
-            while (result != -1) {
-                bos.write(buf, 0, result);
-                result = bis.read(buf);
-            }
-            bos.flush();
-            bis.close();
-            fos.close();
-            bos.close();
-//            String savePath = "/sdcard/robotMap/" + mapNameUuid + ".tar.gz";
-//            FileUtils.decoderBase64File(base64Code, savePath);
-            if (dumpMd5.equals(Md5Utils.getMd5ByFile(new File(dumpMd5)))) {
-                MQTTService.publish(gsonUtils.sendRobotMsg(Content.download_map_dump, "OK"));
-                KeepAliveService.webSocket.send(gsonUtils.sendRobotMsg(Content.UPLOAD_MAP, changeBeans));
-            } else {
-                Log.d("下载地图失败： ", Md5Utils.getMd5ByFile(new File(dumpMd5)) + ",    " + dumpMd5);
-                File file = new File(dumpPath);
-                if (file.isFile() && file.exists()) {
-                    file.delete();
-                }
-                MQTTService.publish(gsonUtils.sendRobotMsg(Content.download_map_dump, "fail"));
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            changeBeans.clear();
         }
     }
 
@@ -321,11 +284,13 @@ public class HandlerThreadManager implements Handler.Callback {
                     mapDataBean.setMap_name_uuid(mapListDataBean.getSendMapName().get(j).getMap_name_uuid());
                     mapDataBean.setMap_name(mapListDataBean.getSendMapName().get(j).getMap_name());
                     mapListDataChangeBean.setMapDataBean(mapDataBean);
+                    Log.d("地图", addMapName + ",地图对比" + mapListDataChangeBean.toString());
                     changeBeans.add(mapListDataChangeBean);
                 }
             }
             index.clear();
         }
+        Log.d("地图", addMapName + ",地图对比完成");
         childHandler.sendEmptyMessage(1);
     }
 
@@ -334,55 +299,65 @@ public class HandlerThreadManager implements Handler.Callback {
                     bean) {
         ArrayList<ContrastPointDataBean> dataBeans = new ArrayList<>();
         List<Integer> index = new ArrayList<>();
-        Log.d("地图22", addPosition + ",删除旧点：" + (pointModel == null)
-                + ",  " + pointModel.size()
-                + ",    " + point.size());
-        for (int i = 0; i < pointModel.size(); i++) {
-            for (int j = 0; j < point.size(); j++) {
-                if (pointModel.get(i).getPoint_Name().equals(point.get(j).getPoint_Name())) {
-                    Log.d("地图：", "点内容" + pointModel.get(i).toString().equals(point.get(j).toString()));
-                    if (!pointModel.get(i).toString().equals(point.get(j).toString())) {//内容不一样，删除之前的点新加
+        Log.d("地图22", addPosition + ",删除旧点：" + (pointModel == null));
+        if (pointModel != null) {
+            for (int i = 0; i < pointModel.size(); i++) {
+                for (int j = 0; j < point.size(); j++) {
+                    if (pointModel.get(i).getPoint_Name().equals(point.get(j).getPoint_Name())) {
+                        Log.d("地图：", "点内容" + pointModel.get(i).toString().equals(point.get(j).toString()));
+                        if (!pointModel.get(i).toString().equals(point.get(j).toString())) {//内容不一样，删除之前的点新加
+                            ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
+                            pointDataBean.setType(addPosition);
+                            pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
+                            pointDataBean.setPoint_type(point.get(j).getPoint_type());
+                            pointDataBean.setPoint_time(point.get(j).getPoint_time());
+                            pointDataBean.setPoint_x(point.get(j).getPoint_x());
+                            pointDataBean.setPoint_y(point.get(j).getPoint_y());
+                            pointDataBean.setAngle(point.get(j).getAngle());
+                            dataBeans.add(pointDataBean);
+                            ContrastPointDataBean pointDataBean1 = new ContrastPointDataBean();
+                            pointDataBean1.setType(deletePosition);
+                            pointDataBean.setPoint_Name(pointModel.get(i).getPoint_Name());
+                            dataBeans.add(pointDataBean1);
+                            Log.d("地图22", addPosition + ",删除旧点：" + pointModel.get(i).getPoint_Name() + ",  添加新点:  " + point.get(j).getPoint_Name());
+                        }
+                        index.add(j);
+                        break;
+                    } else if (j == point.size() - 1) {
                         ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
-                        pointDataBean.setType(addPosition);
-                        pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
-                        pointDataBean.setPoint_type(point.get(j).getPoint_type());
-                        pointDataBean.setPoint_time(point.get(j).getPoint_time());
-                        pointDataBean.setPoint_x(point.get(j).getPoint_x());
-                        pointDataBean.setPoint_y(point.get(j).getPoint_y());
-                        pointDataBean.setAngle(point.get(j).getAngle());
-                        dataBeans.add(pointDataBean);
-                        ContrastPointDataBean pointDataBean1 = new ContrastPointDataBean();
-                        pointDataBean1.setType(deletePosition);
+                        pointDataBean.setType(deletePosition);
                         pointDataBean.setPoint_Name(pointModel.get(i).getPoint_Name());
-                        dataBeans.add(pointDataBean1);
-                        Log.d("地图22", addPosition + ",删除旧点：" + pointModel.get(i).getPoint_Name() + ",  添加新点:  " + point.get(j).getPoint_Name());
+                        dataBeans.add(pointDataBean);
+                        Log.d("地图333", deletePosition + ",删除旧点：" + pointModel.get(i).getPoint_Name());
                     }
-                    index.add(j);
-                    break;
-                } else if (j == point.size() - 1) {
-                    ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
-                    pointDataBean.setType(deletePosition);
-                    pointDataBean.setPoint_Name(pointModel.get(i).getPoint_Name());
-                    dataBeans.add(pointDataBean);
-                    Log.d("地图333", deletePosition + ",删除旧点：" + pointModel.get(i).getPoint_Name());
                 }
             }
-        }
-        for (int j = 0; j < point.size(); j++) {
-            if (!index.contains(j)) {
-                ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
-                pointDataBean.setType(addPosition);
-                pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
-                pointDataBean.setPoint_type(point.get(j).getPoint_type());
-                pointDataBean.setPoint_time(point.get(j).getPoint_time());
-                pointDataBean.setPoint_x(point.get(j).getPoint_x());
-                pointDataBean.setPoint_y(point.get(j).getPoint_y());
-                pointDataBean.setAngle(point.get(j).getAngle());
-                dataBeans.add(pointDataBean);
-                Log.d("地图4444", addPosition + ",添加点：" + pointModel.get(j).getPoint_Name());
+        } else if (point != null) {
+            Log.d("地图", "点数据" + point.size() + ",    " + index.size());
+            for (int j = 0; j < point.size(); j++) {
+                Log.d("地图", "点数据index ----" + index.contains(j));
+                if (index.size() == 0 || !index.contains(j)) {
+                    ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
+                    pointDataBean.setType(addPosition);
+                    Log.d("地图", "点数据name ----" + point.get(j).getPoint_Name());
+                    pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
+                    Log.d("地图", "点数据type ----" + point.get(j).getPoint_type());
+                    pointDataBean.setPoint_type(point.get(j).getPoint_type());
+                    Log.d("地图", "点数据time ----" + point.get(j).getPoint_time());
+                    pointDataBean.setPoint_time(point.get(j).getPoint_time());
+                    Log.d("地图", "点数据x ----" + point.get(j).getPoint_x());
+                    pointDataBean.setPoint_x(point.get(j).getPoint_x());
+                    Log.d("地图", "点数据y ----" + point.get(j).getPoint_y());
+                    pointDataBean.setPoint_y(point.get(j).getPoint_y());
+                    Log.d("地图", "点数据angle ----" + point.get(j).getAngle());
+                    pointDataBean.setAngle(point.get(j).getAngle());
+                    dataBeans.add(pointDataBean);
+                    Log.d("地图4444", addPosition + ",添加点：" + point.get(j).getPoint_Name());
+                }
+                index.clear();
             }
-            index.clear();
         }
+        Log.d("地图","点数据" + dataBeans.size());
         return dataBeans;
     }
 
@@ -392,86 +367,6 @@ public class HandlerThreadManager implements Handler.Callback {
         message.obj = s;
         childHandler.sendMessage(message);
     }
-
-    private void uploadFile(String uploadFile) {
-        Log.d("uploadFile", "uploadFile");
-        String end = "/r/n";
-
-        String Hyphens = "--";
-
-        String boundary = "*****";
-//
-        try {
-//
-            URL url = new URL("ftp://58.240.254.188:10021");
-//
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            /* 允许Input、Output，不使用Cache */
-
-            con.setDoInput(true);
-            con.setRequestProperty("Username", "njdc");
-            con.setRequestProperty("Password", "njdc");
-            con.setDoOutput(true);
-            con.setUseCaches(false);
-
-            /* 设定传送的method=POST */
-
-            con.setRequestMethod("POST");
-
-            /* setRequestProperty */
-
-            con.setRequestProperty("Connection", "Keep-Alive");
-
-            con.setRequestProperty("Charset", "UTF-8");
-
-//            con.setRequestProperty("Content-Type",
-//
-//                    "multipart/form-data;boundary=" + boundary);
-
-            /* 设定DataOutputStream */
-
-            DataOutputStream ds = new DataOutputStream(con.getOutputStream());
-//            String data = "username=njdc" + "&password=njdc";
-//            ds.write(data.getBytes());
-//            ds.flush();
-//            ds.writeBytes(Hyphens + boundary + end);
-//
-//            ds.writeBytes("Content-Disposition: form-data; "
-//
-//                    + "name=/" file1 / ";filename=/"" + newName + " / "" + end);
-//
-//            ds.writeBytes(end);
-            /* 取得文件的FileInputStream */
-//            FileInputStream fStream = new FileInputStream(uploadFile);
-//            /* 设定每次写入1024bytes */
-//            int bufferSize = 1024;
-//            byte[] buffer = new byte[bufferSize];
-//            int length = -1;
-//            /* 从文件读取数据到缓冲区 */
-//            while ((length = fStream.read(buffer)) != -1) {
-//                /* 将数据写入DataOutputStream中 */
-//                ds.write(buffer, 0, length);
-//            }
-//            //ds.writeBytes(end);
-//            //ds.writeBytes(Hyphens + boundary + Hyphens + end);
-//            fStream.close();
-//            ds.flush();
-//            /* 取得Response内容 */
-//            InputStream is = con.getInputStream();
-//            int ch;
-//            StringBuffer b = new StringBuffer();
-//            while ((ch = is.read()) != -1) {
-//                b.append((char) ch);
-//            }
-//            System.out.println("上传成功");
-//            Toast.makeText(mContext, "上传成功", Toast.LENGTH_LONG).show();
-//            ds.close();
-        } catch (Exception e) {
-            Log.d("uploadFile", "上传失败" + e.getMessage());
-
-        }
-    }
-
 
     public void contrastTaskList(SchedulerTaskListBean taskListBean) {
         Log.d("contrastTaskList", taskListBean.toString());
@@ -519,6 +414,23 @@ public class HandlerThreadManager implements Handler.Callback {
         }
     }
 
+    public void uploadLog(UploadLogBean uploadLogBean) {
+        Message message = childHandler.obtainMessage();
+        message.what = 4;
+        message.obj = uploadLogBean;
+        childHandler.sendMessage(message);
+    }
+
+    public void downloadMap(String mapUuid, String md5) {
+        Message message = childHandler.obtainMessage();
+        message.what = 5;
+        Bundle bundle = new Bundle();
+        bundle.putString("mapUuid", mapUuid);
+        bundle.putString("md5", md5);
+        message.setData(bundle);
+        childHandler.sendMessage(message);
+    }
+
     @Override
     public boolean handleMessage(@NonNull Message msg) {
         switch (msg.what) {
@@ -526,18 +438,44 @@ public class HandlerThreadManager implements Handler.Callback {
                 checkMapList();
                 break;
             case 2:
-//                FTPManager.getInstance(mContext).connect();
-//                FTPManager.getInstance(mContext).uploadFile(
-//                        "/sdcard/robotMap/" + (String) msg.obj + ".tar.gz",
-//                        "robotMap/");
-//                FTPManager.getInstance(mContext).closeFTP();
+                FTPManager.getInstance(mContext).connect();
+                FTPManager.getInstance(mContext).uploadFile(
+                        "/sdcard/robotMap/" + (String) msg.obj + ".tar.gz",
+                        "/robotMap/");
+                FTPManager.getInstance(mContext).closeFTP();
                 break;
             case 3:
                 KeepAliveService.webSocket.send(gsonUtils.putRobotMsg(Content.GETMAPLIST, ""));
                 break;
+            case 4:
+                FTPManager.getInstance(mContext).connect();
+                UploadLogBean uploadLogBean = (UploadLogBean) msg.obj;
+                if (uploadLogBean != null) {
+                    File file = new File("/sdcard/robotLogZip/");
+                    if (file.exists()) {
+                        for (int i = 0; i < file.listFiles().length; i++) {
+                            Log.d("文件名字： ", file.listFiles()[i].getName());
+                            FTPManager.getInstance(mContext).uploadFile(
+                                    "/sdcard/robotLogZip/" + file.listFiles()[i].getName(),
+                                    "/robotLog/");
+                        }
+                        for (int i = 0; i < file.listFiles().length; i++) {
+                            file.listFiles()[i].delete();
+                        }
+                    }
+                    FTPManager.getInstance(mContext).closeFTP();
+
+                }
+                break;
+            case 5:
+                Bundle bundle = msg.getData();
+                FTPManager.getInstance(mContext).connect();
+                FTPManager.getInstance(mContext).downloadFile("/sdcard/robotMap/" + bundle.getString("mapUuid") + ".tar.gz",
+                        "/robotMap/" + bundle.getString("mapUuid") + ".tar.gz", bundle.getString("mapUuid") + ".tar.gz");
+                FTPManager.getInstance(mContext).closeFTP();
+                break;
             default:
                 break;
-
         }
 
         return false;

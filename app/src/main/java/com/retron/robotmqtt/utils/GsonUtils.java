@@ -1,5 +1,6 @@
 package com.retron.robotmqtt.utils;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import com.retron.robotmqtt.bean.ContrastPointDataBean;
@@ -115,8 +116,24 @@ public class GsonUtils {
             jsonObject.put(TYPE, type);
             jsonObject.put(Content.MAP_NAME_UUID, mapNameUuid);
             jsonObject.put(Content.MAP_NAME, mapName);
-            JSONObject js = new JSONObject(msg);
-            jsonObject.put(type, js);
+            if (!TextUtils.isEmpty(msg)) {
+                JSONObject js = new JSONObject(msg);
+                jsonObject.put(type, js);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.d("sendRobotMsg ", jsonObject.toString());
+        return jsonObject.toString();
+    }
+
+    public String putRobotString(String type, String msg) {
+        jsonObject = new JSONObject();
+        try {
+            jsonObject.put(TYPE, type);
+            jsonObject.put(Content.MAP_NAME_UUID, mapNameUuid);
+            jsonObject.put(Content.MAP_NAME, mapName);
+            jsonObject.put(type, msg);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -148,6 +165,19 @@ public class GsonUtils {
             e.printStackTrace();
         }
         Log.d("renameMap ", jsonObject.toString());
+        return jsonObject.toString();
+    }
+
+    public String downloadlog(String type, List<String> list) {
+        jsonObject = new JSONObject();
+        try {
+            jsonObject.put(TYPE, type);
+            JSONArray jsonArray = new JSONArray(list);
+            jsonObject.put(Content.FILE_NAME, jsonArray);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.d("downloadlog ", jsonObject.toString());
         return jsonObject.toString();
     }
 
@@ -192,17 +222,19 @@ public class GsonUtils {
             jsonObject.put(TYPE, type);
             jsonObject.put(Content.MAP_NAME_UUID, mapNameUuid);
             jsonObject.put(Content.MAP_NAME, mapName);
-            for (int i = 0; i < virtualObstacleBean.getSend_virtual().size(); i++) {
-                JSONArray jsArray = new JSONArray();
-                for (int j = 0; j < virtualObstacleBean.getSend_virtual().get(i).size(); j++) {
-                    JSONObject js = new JSONObject();
-                    js.put(Content.VIRTUAL_X, virtualObstacleBean.getSend_virtual().get(i).get(j).getVirtual_x());
-                    js.put(Content.VIRTUAL_Y, virtualObstacleBean.getSend_virtual().get(i).get(j).getVirtual_y());
-                    jsArray.put(j, js);
+            if (virtualObstacleBean != null && virtualObstacleBean.getSend_virtual() != null) {
+                for (int i = 0; i < virtualObstacleBean.getSend_virtual().size(); i++) {
+                    JSONArray jsArray = new JSONArray();
+                    for (int j = 0; j < virtualObstacleBean.getSend_virtual().get(i).size(); j++) {
+                        JSONObject js = new JSONObject();
+                        js.put(Content.VIRTUAL_X, virtualObstacleBean.getSend_virtual().get(i).get(j).getVirtual_x());
+                        js.put(Content.VIRTUAL_Y, virtualObstacleBean.getSend_virtual().get(i).get(j).getVirtual_y());
+                        jsArray.put(j, js);
+                    }
+                    jsonArray.put(i, jsArray);
                 }
-                jsonArray.put(i, jsArray);
+                jsonObject.put(type, jsonArray);
             }
-            jsonObject.put(type, jsonArray);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -258,5 +290,19 @@ public class GsonUtils {
             e.printStackTrace();
         }
         return jsonObject.toString();
+    }
+
+    public String putRobotMsg(String starttaskqueue, String mapNameUuid, String mapName, String task_name) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put(TYPE, starttaskqueue);
+            jsonObject.put(Content.MAP_NAME, mapName);
+            jsonObject.put(Content.MAP_NAME_UUID, mapNameUuid);
+            jsonObject.put(Content.TASK_NAME, task_name);
+        }catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject.toString();
+
     }
 }
