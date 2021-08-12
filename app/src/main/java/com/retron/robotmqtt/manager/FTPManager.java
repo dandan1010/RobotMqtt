@@ -2,7 +2,6 @@ package com.retron.robotmqtt.manager;
 
 import android.content.Context;
 
-import com.retron.robotmqtt.mqtt.MqttHandleMsg;
 import com.retron.robotmqtt.utils.SharedPrefUtil;
 
 import java.io.File;
@@ -230,7 +229,6 @@ public class FTPManager {
         try {
             if (ftpClient.completePendingCommand()) {
                 System.out.println("文件下载成功");
-                MqttHandleMsg.downloadMapResult(fileName);
                 return true;
             }
         } catch (IOException e) {

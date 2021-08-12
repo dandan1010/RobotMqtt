@@ -1,6 +1,7 @@
 package com.retron.robotmqtt.manager;
 
 import android.content.Context;
+import android.content.Intent;
 import android.nfc.Tag;
 import android.os.Bundle;
 import android.os.Handler;
@@ -12,6 +13,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.retron.robotmqtt.KeepAliveService;
 import com.retron.robotmqtt.bean.ContrastPointDataBean;
 import com.retron.robotmqtt.bean.MapListDataBean;
@@ -20,11 +22,14 @@ import com.retron.robotmqtt.bean.PointDataBean;
 import com.retron.robotmqtt.bean.SchedulerTaskListBean;
 import com.retron.robotmqtt.bean.UploadLogBean;
 import com.retron.robotmqtt.mqtt.MQTTService;
+import com.retron.robotmqtt.mqtt.MqttHandleMsg;
 import com.retron.robotmqtt.utils.Content;
 import com.retron.robotmqtt.utils.GsonUtils;
 import com.retron.robotmqtt.utils.Md5Utils;
 import com.retron.robotmqtt.utils.SharedPrefUtil;
 
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
@@ -50,10 +55,21 @@ public class HandlerThreadManager implements Handler.Callback {
     private final String addMapName = "addMapName";
     private final String deletePosition = "deletePosition";
     private final String addPosition = "addPosition";
+    public static final String localPath = "/sdcard/robotMap/";
+    public static final String serverPath = "/robotMap/";
+    public static final String localLogPath = "/sdcard/robotLogZip/";
+    public static final String serverLogPath = "/robotLog/";
+
     private int addMapCount = 0;
     private Gson gson;
     private HandlerThread handlerThread;
     private Handler childHandler;
+    public static final int CHECK_MAP_LIST = 1;
+    public static final int UPLOAD_FILE = 2;
+    public static final int GET_MAP_LIST = 3;
+    public static final int UPLOAD_LOG = 4;
+    public static final int DOWNLOAD_FILE = 5;
+    public static final int DOWNLOAD_OTA = 6;
 
     public HandlerThreadManager(Context mContext) {
         this.mContext = mContext;
@@ -125,7 +141,7 @@ public class HandlerThreadManager implements Handler.Callback {
                         break;
                     case addMapName:
                         Log.d("threadPoolExecutor", "addMapName：" + changeBeans.get(i).getMapDataBean().getMap_name_uuid());
-                        downloadMap(changeBeans.get(i).getMapDataBean().getMap_name_uuid(), changeBeans.get(i).getMapDataBean().getDump_md5());
+                        //downloadMap(changeBeans.get(i).getMapDataBean().getMap_name_uuid(), changeBeans.get(i).getMapDataBean().getDump_md5());
                         break;
                     default:
                         Log.d("threadPoolExecutor", "default");
@@ -178,7 +194,7 @@ public class HandlerThreadManager implements Handler.Callback {
                 }
             }
         }
-        childHandler.sendEmptyMessageDelayed(3, 3000);
+        childHandler.sendEmptyMessageDelayed(GET_MAP_LIST, 3000);
     }
 
     public void checkAddMapPoint(String mapUuid) {
@@ -193,7 +209,7 @@ public class HandlerThreadManager implements Handler.Callback {
                     for (int j = 0; j < point.size(); j++) {
                         switch (point.get(j).getType()) {
                             case addPosition:
-                                Log.d("新地图添加点", point.get(j) + ",    "+ changeBeans.get(i).getMapDataBean().getMap_name_uuid());
+                                Log.d("新地图添加点", point.get(j) + ",    " + changeBeans.get(i).getMapDataBean().getMap_name_uuid());
                                 KeepAliveService.webSocket.send(gsonUtils.sendRobotMsg(
                                         Content.MQTT_ADD_POINT,
                                         changeBeans.get(i).getMapDataBean().getMap_name_uuid(),
@@ -206,11 +222,11 @@ public class HandlerThreadManager implements Handler.Callback {
                 }
             }
             changeBeans.clear();
+            childHandler.sendEmptyMessageDelayed(GET_MAP_LIST, 3000);
         }
     }
 
     public void contrastMapList(MapListDataBean mapListDataBean) {
-        Log.d("地图", "地图 --" + gson.toJson(mapListDataBean));
         changeBeans = new ArrayList<>();
         if (mapListDataBean.getSendMapName().size() == 0
                 && KeepAliveService.mapViewModel != null
@@ -233,12 +249,10 @@ public class HandlerThreadManager implements Handler.Callback {
                 && KeepAliveService.mapViewModel.getMapList() != null
                 && KeepAliveService.mapViewModel.getMapList().getSendMapName().size() != 0) {
             ArrayList<MapListDataBean.MapDataBean> arrayList = KeepAliveService.mapViewModel.getMapList().getSendMapName();
-            Log.d("地图", "循环aaa ： ");
             List<Integer> index = new ArrayList<>();
 //            if (arrayList.size() >= mapListDataBean.getSendMapName().size()) {
             for (int i = 0; i < arrayList.size(); i++) {
                 for (int j = 0; j < mapListDataBean.getSendMapName().size(); j++) {
-                    Log.d("地图", "循环 ： " + (arrayList.get(i).getMap_name_uuid().equals(mapListDataBean.getSendMapName().get(j).getMap_name_uuid())));
                     if (arrayList.get(i).getMap_name_uuid().equals(mapListDataBean.getSendMapName().get(j).getMap_name_uuid())) {
                         MapListDataChangeBean mapListDataChangeBean = new MapListDataChangeBean();
                         if (!arrayList.get(i).getMap_name().equals(mapListDataBean.getSendMapName().get(j).getMap_name())) {
@@ -284,14 +298,12 @@ public class HandlerThreadManager implements Handler.Callback {
                     mapDataBean.setMap_name_uuid(mapListDataBean.getSendMapName().get(j).getMap_name_uuid());
                     mapDataBean.setMap_name(mapListDataBean.getSendMapName().get(j).getMap_name());
                     mapListDataChangeBean.setMapDataBean(mapDataBean);
-                    Log.d("地图", addMapName + ",地图对比" + mapListDataChangeBean.toString());
                     changeBeans.add(mapListDataChangeBean);
                 }
             }
             index.clear();
         }
-        Log.d("地图", addMapName + ",地图对比完成");
-        childHandler.sendEmptyMessage(1);
+        childHandler.sendEmptyMessage(CHECK_MAP_LIST);
     }
 
     private ArrayList<ContrastPointDataBean> contrastPoint
@@ -335,21 +347,14 @@ public class HandlerThreadManager implements Handler.Callback {
         } else if (point != null) {
             Log.d("地图", "点数据" + point.size() + ",    " + index.size());
             for (int j = 0; j < point.size(); j++) {
-                Log.d("地图", "点数据index ----" + index.contains(j));
                 if (index.size() == 0 || !index.contains(j)) {
                     ContrastPointDataBean pointDataBean = new ContrastPointDataBean();
                     pointDataBean.setType(addPosition);
-                    Log.d("地图", "点数据name ----" + point.get(j).getPoint_Name());
                     pointDataBean.setPoint_Name(point.get(j).getPoint_Name());
-                    Log.d("地图", "点数据type ----" + point.get(j).getPoint_type());
                     pointDataBean.setPoint_type(point.get(j).getPoint_type());
-                    Log.d("地图", "点数据time ----" + point.get(j).getPoint_time());
                     pointDataBean.setPoint_time(point.get(j).getPoint_time());
-                    Log.d("地图", "点数据x ----" + point.get(j).getPoint_x());
                     pointDataBean.setPoint_x(point.get(j).getPoint_x());
-                    Log.d("地图", "点数据y ----" + point.get(j).getPoint_y());
                     pointDataBean.setPoint_y(point.get(j).getPoint_y());
-                    Log.d("地图", "点数据angle ----" + point.get(j).getAngle());
                     pointDataBean.setAngle(point.get(j).getAngle());
                     dataBeans.add(pointDataBean);
                     Log.d("地图4444", addPosition + ",添加点：" + point.get(j).getPoint_Name());
@@ -357,14 +362,13 @@ public class HandlerThreadManager implements Handler.Callback {
                 index.clear();
             }
         }
-        Log.d("地图","点数据" + dataBeans.size());
         return dataBeans;
     }
 
-    public void uploadMapDump(String s) {
+    public void uploadMapDump(JSONArray jsonArray) {
         Message message = childHandler.obtainMessage();
-        message.what = 2;
-        message.obj = s;
+        message.what = UPLOAD_FILE;
+        message.obj = jsonArray;
         childHandler.sendMessage(message);
     }
 
@@ -416,14 +420,14 @@ public class HandlerThreadManager implements Handler.Callback {
 
     public void uploadLog(UploadLogBean uploadLogBean) {
         Message message = childHandler.obtainMessage();
-        message.what = 4;
+        message.what = UPLOAD_LOG;
         message.obj = uploadLogBean;
         childHandler.sendMessage(message);
     }
 
     public void downloadMap(String mapUuid, String md5) {
         Message message = childHandler.obtainMessage();
-        message.what = 5;
+        message.what = DOWNLOAD_FILE;
         Bundle bundle = new Bundle();
         bundle.putString("mapUuid", mapUuid);
         bundle.putString("md5", md5);
@@ -431,55 +435,116 @@ public class HandlerThreadManager implements Handler.Callback {
         childHandler.sendMessage(message);
     }
 
+    public void downloadOta(String packageName) {
+        Message message = childHandler.obtainMessage();
+        message.what = DOWNLOAD_OTA;
+        message.obj = packageName;
+        childHandler.sendMessage(message);
+    }
+
     @Override
     public boolean handleMessage(@NonNull Message msg) {
         switch (msg.what) {
-            case 1:
+            case CHECK_MAP_LIST:
                 checkMapList();
                 break;
-            case 2:
-                FTPManager.getInstance(mContext).connect();
-                FTPManager.getInstance(mContext).uploadFile(
-                        "/sdcard/robotMap/" + (String) msg.obj + ".tar.gz",
-                        "/robotMap/");
-                FTPManager.getInstance(mContext).closeFTP();
+            case UPLOAD_FILE:
+                try {
+                    JSONArray jsonArray = (JSONArray) msg.obj;
+                    FTPManager.getInstance(mContext).connect();
+                    JSONArray array = new JSONArray();
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        String mapNameUuid = jsonArray.getJSONObject(i).getString(Content.MAP_NAME_UUID);
+//                        String mapMd5 = jsonArray.getJSONObject(i).getString(Content.dump_md5);
+                        boolean uploadFile = FTPManager.getInstance(mContext).uploadFile(
+                                "/sdcard/robotMap/" + mapNameUuid + ".tar.gz",
+                                "/robotMap/");
+                        Log.d("UPLOAD_FILE", "mapNameUuid : " + mapNameUuid);
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put(Content.MAP_NAME_UUID, mapNameUuid);
+                        if (uploadFile) {
+                            jsonObject.put(Content.result, Content.response_ok);
+                        } else {
+                            jsonObject.put(Content.result, Content.response_fail);
+                        }
+                        array.put(jsonObject);
+                    }
+                    MQTTService.publish(gsonUtils.sendRobotMsg(Content.upload_map_result, array));
+                    FTPManager.getInstance(mContext).closeFTP();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
                 break;
-            case 3:
+            case GET_MAP_LIST:
                 KeepAliveService.webSocket.send(gsonUtils.putRobotMsg(Content.GETMAPLIST, ""));
                 break;
-            case 4:
+            case UPLOAD_LOG:
                 FTPManager.getInstance(mContext).connect();
                 UploadLogBean uploadLogBean = (UploadLogBean) msg.obj;
                 if (uploadLogBean != null) {
-                    File file = new File("/sdcard/robotLogZip/");
-                    if (file.exists()) {
-                        for (int i = 0; i < file.listFiles().length; i++) {
-                            Log.d("文件名字： ", file.listFiles()[i].getName());
-                            FTPManager.getInstance(mContext).uploadFile(
-                                    "/sdcard/robotLogZip/" + file.listFiles()[i].getName(),
-                                    "/robotLog/");
+                    try {
+                        JSONArray array = new JSONArray();
+                        File file = new File(localLogPath);
+                        if (file.exists()) {
+                            for (int i = 0; i < file.listFiles().length; i++) {
+                                Log.d("文件名字： ", file.listFiles()[i].getName());
+                                boolean uploadLog = FTPManager.getInstance(mContext).uploadFile(
+                                        localLogPath + file.listFiles()[i].getName(),
+                                        serverLogPath);
+                                JSONObject jsonObject = new JSONObject();
+                                jsonObject.put(Content.ros_bag, file.listFiles()[i].getName());
+                                if (uploadLog) {
+                                    jsonObject.put(Content.result, Content.response_ok);
+                                } else {
+                                    jsonObject.put(Content.result, Content.response_fail);
+                                }
+                                array.put(jsonObject);
+                            }
+                            for (int i = 0; i < file.listFiles().length; i++) {
+                                file.listFiles()[i].delete();
+                            }
                         }
-                        for (int i = 0; i < file.listFiles().length; i++) {
-                            file.listFiles()[i].delete();
-                        }
+                        MQTTService.publish(gsonUtils.sendRobotMsg(Content.upload_bag_result, array));
+                    } catch (JSONException e) {
+                        e.printStackTrace();
                     }
                     FTPManager.getInstance(mContext).closeFTP();
-
                 }
                 break;
-            case 5:
+            case DOWNLOAD_FILE:
                 Bundle bundle = msg.getData();
                 FTPManager.getInstance(mContext).connect();
-                FTPManager.getInstance(mContext).downloadFile("/sdcard/robotMap/" + bundle.getString("mapUuid") + ".tar.gz",
-                        "/robotMap/" + bundle.getString("mapUuid") + ".tar.gz", bundle.getString("mapUuid") + ".tar.gz");
+                FTPManager.getInstance(mContext).downloadFile(localPath + bundle.getString("mapUuid") + ".tar.gz",
+                        serverPath + bundle.getString("mapUuid") + ".tar.gz", bundle.getString("mapUuid") + ".tar.gz");
                 FTPManager.getInstance(mContext).closeFTP();
+                MqttHandleMsg.downloadMapResult(bundle.getString("mapUuid") + ".tar.gz");
+                break;
+            case DOWNLOAD_OTA:
+                FTPManager.getInstance(mContext).connect();
+                FTPManager.getInstance(mContext).downloadFile("/sdcard/" + (String) msg.obj + ".apk",
+                        "/ota/" + (String) msg.obj + ".apk", (String) msg.obj + ".apk");
+                FTPManager.getInstance(mContext).closeFTP();
+                if (((String) msg.obj).equals("update")) {
+                    sendUpdateBroadcast();
+                } else {
+                    sendMqttUpdateBroadcast();
+                }
                 break;
             default:
                 break;
         }
-
         return false;
     }
 
+    public void sendUpdateBroadcast() {
+        Intent intent = new Intent("com.android.robot.update");
+        intent.setPackage("com.retron.wireLessApk");
+        mContext.sendBroadcast(intent);
+    }
 
+    public void sendMqttUpdateBroadcast() {
+        Intent intent = new Intent("com.android.mqtt.update");
+        intent.setPackage("com.retron.wireLessApk");
+        mContext.sendBroadcast(intent);
+    }
 }

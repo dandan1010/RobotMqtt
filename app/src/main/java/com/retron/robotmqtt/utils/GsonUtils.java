@@ -80,6 +80,28 @@ public class GsonUtils {
         return jsonObject.toString();
     }
 
+    public String sendRobotMsg(String type, JSONArray msg) {
+        jsonObject = new JSONObject();
+        try {
+            jsonObject.put(type, msg);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.d("sendJsonArray ", jsonObject.toString());
+        return jsonObject.toString();
+    }
+
+    public String sendResponse(String type, String msg) {
+        jsonObject = new JSONObject();
+        try {
+            jsonObject.put(type, msg);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        Log.d("sendRobotMsg11111 ", jsonObject.toString());
+        return jsonObject.toString();
+    }
+
     public String sendMapbinary(String type,String mapuuid) {
         jsonObject = new JSONObject();
         String filePath = "/sdcard/robotMap/" + mapuuid+ ".tar.gz";

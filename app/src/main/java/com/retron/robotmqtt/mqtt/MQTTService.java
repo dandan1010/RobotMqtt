@@ -11,28 +11,29 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import com.retron.robotmqtt.KeepAliveService;
+import com.retron.robotmqtt.utils.SharedPrefUtil;
 
 import org.eclipse.paho.android.service.MqttAndroidClient;
 import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 
 public class MQTTService extends Service {
     public static final String TAG = MQTTService.class.getSimpleName();
     private static MqttAndroidClient client;
     private MqttConnectOptions conOpt;
-    //    private String host = "tcp://10.0.2.2:61613";//模拟器
     private String host = "tcp://36.152.128.5:1883";//真机，实际是电脑端服务器部署的ip地址，不是手机的ip地址
-    private String userName = "7HJqCiVjzKN1p2iSW6AJ";
     private static String attributesTopic = "v1/devices/me/attributes";//订阅的topic
     private static String telemetryTopic ="v1/devices/me/telemetry";
     private static String rpcTopic ="v1/devices/me/rpc/request/+";
     private String clientId = "";//不同客户端需要修改值
+    private static String PROVISION_REQUEST_TOPIC = "/provision/request";
+    private static String PROVISION_RESPONSE_TOPIC = "/provision/response";
+    public static String DEFAULT_USERNAME;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -61,6 +62,7 @@ public class MQTTService extends Service {
 
     private void init() {
         // 服务器地址（协议+地址+端口号）
+        DEFAULT_USERNAME = SharedPrefUtil.getInstance(this).getToken("Token");
         String uri = host;
         client = new MqttAndroidClient(this, uri, clientId);
         // 设置MQTT监听并且接受消息
@@ -75,8 +77,10 @@ public class MQTTService extends Service {
         conOpt.setConnectionTimeout(20);
         // 心跳包发送间隔，单位：秒
         conOpt.setKeepAliveInterval(20);
+        //设置mqtt是否自动重连
+        conOpt.setAutomaticReconnect(true);
         // 用户名
-        conOpt.setUserName(userName);
+        conOpt.setUserName(DEFAULT_USERNAME);
         // 密码
         //conOpt.setPassword(passWord.toCharArray());
 
@@ -87,13 +91,17 @@ public class MQTTService extends Service {
         }
     }
 
-    @Override
-    public void onDestroy() {
+    public static void disConnect() {
         try {
             client.disconnect();
         } catch (MqttException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public void onDestroy() {
+        disConnect();
         super.onDestroy();
     }
 
@@ -120,9 +128,25 @@ public class MQTTService extends Service {
                 client.subscribe(attributesTopic, 0);
                 client.subscribe(telemetryTopic, 1);
                 client.subscribe(rpcTopic, 2);
-                Intent intentServer = new Intent(MQTTService.this, KeepAliveService.class);
-                stopService(intentServer);
-                startService(intentServer);
+                if ("provision".equals(DEFAULT_USERNAME)) {
+                    client.subscribe(PROVISION_RESPONSE_TOPIC, 3);
+                    try {
+                        JSONObject jsonObject = new JSONObject();
+                        jsonObject.put("deviceName","device_name");
+                        jsonObject.put("provisionDeviceKey", "lqmcw5ncumlxebh26lgx");
+                        jsonObject.put("provisionDeviceSecret", "zfhlyi5jm3xv798vjjb2");
+                        Log.d("文件发送",jsonObject.toString());
+                        client.publish(PROVISION_REQUEST_TOPIC, jsonObject.toString().getBytes(), 0, false);
+                    } catch (MqttException e) {
+                        e.printStackTrace();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    Intent intentServer = new Intent(MQTTService.this, KeepAliveService.class);
+                    stopService(intentServer);
+                    startService(intentServer);
+                }
             } catch (MqttException e) {
                 e.printStackTrace();
             }

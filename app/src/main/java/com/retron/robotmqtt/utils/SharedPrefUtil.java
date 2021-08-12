@@ -41,6 +41,18 @@ public class SharedPrefUtil {
         return sharedPreferences.getLong(key, 0);
     }
 
+    //token
+    public void setToken(String key, String time) {
+        editor.putString(key, time);
+        editor.commit();
+    }
+
+    public String getToken(String key) {
+        return sharedPreferences.getString(key, "provision");
+    }
+
+
+
     /**
      * 清除所有数据
      */

@@ -36,8 +36,10 @@ import com.retron.robotmqtt.sqlite.SqLiteOpenHelperUtils;
 import com.retron.robotmqtt.utils.AlarmUtils;
 import com.retron.robotmqtt.utils.Content;
 import com.retron.robotmqtt.utils.GsonUtils;
+import com.retron.robotmqtt.utils.Md5Utils;
 import com.retron.robotmqtt.utils.SharedPrefUtil;
 
+import org.eclipse.paho.android.service.MqttService;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -57,7 +59,6 @@ public class KeepAliveService extends LifecycleService {
     private static final String TAG = "KeepAliveService";
     private GsonUtils gsonUtils;
     private Gson gson;
-    private JSONObject jsonObject;
     public static TaskViewModel taskViewModel;
     public static MapViewModel mapViewModel;
     public static DeviceInfoViewModel deviceInfoViewModel;
@@ -108,6 +109,7 @@ public class KeepAliveService extends LifecycleService {
         super.onStartCommand(intent, flags, startId);
         if ("reconnectMqtt".equals(intent.getAction())) {
             webSocket = connect();
+            startService(new Intent(this, MQTTService.class));
         }
         return START_NOT_STICKY;
     }
@@ -235,6 +237,7 @@ public class KeepAliveService extends LifecycleService {
     }*/
 
     private void handleMessage(String message) {
+        JSONObject jsonObject = null;
         switch (gsonUtils.getType(message)) {
             case Content.SENDMAPNAME:
                 //地图列表
@@ -261,7 +264,6 @@ public class KeepAliveService extends LifecycleService {
                 break;
             case Content.SENDGPSPOSITION:
                 CurrentPositionDataBean currPoint = gson.fromJson(message, CurrentPositionDataBean.class);
-                Log.d(TAG, "SENDGPSPOSITION point is " + currPoint);
                 if (deviceInfoViewModel.getCurrentPoint() == null || !currPoint.toString().equals(deviceInfoViewModel.getCurrentPoint().toString())) {
                     deviceInfoViewModel.setCurrentPoint(currPoint);
                 }
@@ -285,8 +287,10 @@ public class KeepAliveService extends LifecycleService {
                 }
                 break;
             case Content.STATUS:
-                Log.d(TAG, "Content.STATUS message is " + message);
                 RobotStatusDataBean robotStatus = gson.fromJson(message, RobotStatusDataBean.class);
+                if (!Content.scanning_map.equals(Content.robot_statue)) {
+                    Content.robot_statue = robotStatus.getRobot_status();
+                }
                 if (deviceInfoViewModel.getRobotStatus() == null || !robotStatus.toString().equals(deviceInfoViewModel.getRobotStatus().toString())) {
                     deviceInfoViewModel.setRobotStatus(robotStatus);
                 }
@@ -296,15 +300,6 @@ public class KeepAliveService extends LifecycleService {
                 SettingsDataBean settings = gson.fromJson(message, SettingsDataBean.class);
                 if (deviceInfoViewModel.getSettings() == null || !settings.toString().equals(deviceInfoViewModel.getSettings().toString())) {
                     deviceInfoViewModel.setSettings(settings);
-                }
-                break;
-            case Content.UPDATE_FILE_LENGTH:
-                try {
-                    jsonObject = new JSONObject(message);
-                    int downloadLength = jsonObject.getInt(Content.UPDATE_FILE_LENGTH);
-                    deviceInfoViewModel.setDownloadLength(downloadLength);
-                } catch (JSONException e) {
-                    e.printStackTrace();
                 }
                 break;
             case Content.SEND_MQTT_VIRTUAL:
@@ -326,7 +321,7 @@ public class KeepAliveService extends LifecycleService {
 //                        mMapListDataBean.setSendMapName(mapDataBeans);
 //                        mapViewModel.setMapList(mMapListDataBean);
                     }
-                   }
+                }
 
                 break;
             case Content.REQUEST_MSG:
@@ -354,21 +349,39 @@ public class KeepAliveService extends LifecycleService {
                 break;
             case Content.UPLOADMAPSYN:
                 try {
-                    JSONObject jsonObject = new JSONObject(message);
+                    jsonObject = new JSONObject(message);
+                    String mapNameUuid = jsonObject.getString(Content.MAP_NAME_UUID);
+                    JSONObject json = new JSONObject();
+                    json.put(Content.MAP_NAME_UUID, mapNameUuid);
                     if ("successed".equals(jsonObject.getString("status"))) {
-                        HandlerThreadManager.getInstance(mContext).checkAddMapPoint(jsonObject.getString(Content.MAP_NAME_UUID));
+                        jsonObject.put(Content.result, Content.response_ok);
+                        HandlerThreadManager.getInstance(mContext).checkAddMapPoint(mapNameUuid);
+                    } else {
+                        jsonObject.put(Content.result, Content.response_fail);
                     }
+                    MQTTService.publish(gsonUtils.sendRobotMsg(Content.result, jsonObject.toString()));
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
                 break;
             case Content.GET_LOG_LIST:
                 Log.d(TAG, "LOG列表： " + gsonUtils.sendRobotMsg(Content.GET_LOG_LIST, message));
-                    MQTTService.publish(gsonUtils.sendRobotMsg(Content.GET_LOG_LIST, message));
+                MQTTService.publish(gsonUtils.sendRobotMsg(Content.GET_LOG_LIST, message));
                 break;
             case Content.COMPRESSED:
                 HandlerThreadManager.getInstance(mContext).uploadLog(MqttHandleMsg.uploadLogBean);
                 break;
+            case Content.SCANNING_MAP:
+                try {
+                    if (jsonObject.getBoolean(Content.SCANNING_MAP)) {
+                        Content.robot_statue = Content.scanning_map;
+                    } else {
+                        Content.robot_statue = "";
+                    }
+                    break;
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             default:
                 break;
         }
@@ -392,6 +405,8 @@ public class KeepAliveService extends LifecycleService {
             mMap.setOrigin_x(mapListDataBean.getSendMapName().get(i).getOrigin_x());
             mMap.setOrigin_y(mapListDataBean.getSendMapName().get(i).getOrigin_y());
             mMap.setResolution(mapListDataBean.getSendMapName().get(i).getResolution());
+            mMap.setDump_md5(mapListDataBean.getSendMapName().get(i).getDump_md5());
+            //mMap.setDump_link(mapListDataBean.getSendMapName().get(i).getDump_link());
             mMap.setVirtualDataBeans(virtualDataBeans);
             mMap.setPoint(point);
             mMap.setDownLoadMapBean(downLoadMapBean);
@@ -432,7 +447,7 @@ public class KeepAliveService extends LifecycleService {
                         }
                         jsonObject.put(Content.ROBOT_HEALTHY, errorMsg);
                         reportHealthyTime = false;
-                        Log.d("发送deviceerror" , gsonUtils.sendRobotMsg(Content.device_error, jsonObject.toString()));
+                        Log.d("发送deviceerror", gsonUtils.sendRobotMsg(Content.device_error, jsonObject.toString()));
                         MQTTService.publishTelemetry(gsonUtils.sendRobotMsg(Content.device_error, jsonObject.toString()));
                     } catch (JSONException e) {
                         e.printStackTrace();
@@ -443,7 +458,7 @@ public class KeepAliveService extends LifecycleService {
         deviceInfoViewModel.currentPoint.observeForever(new Observer<CurrentPositionDataBean>() {
             @Override
             public void onChanged(CurrentPositionDataBean currentPositionDataBean) {
-                Log.d("发送currentPoint" , gsonUtils.sendRobotMsg(Content.gps_position, gson.toJson(currentPositionDataBean)));
+                Log.d("发送currentPoint", gsonUtils.sendRobotMsg(Content.gps_position, gson.toJson(currentPositionDataBean)));
                 MQTTService.publishTelemetry(gsonUtils.sendRobotMsg(Content.gps_position, gson.toJson(currentPositionDataBean)));
             }
         });
@@ -454,7 +469,7 @@ public class KeepAliveService extends LifecycleService {
             }
         });
 
-    //地图列表
+        //地图列表
         mapViewModel.mapList.observeForever(new Observer<MapListDataBean>() {
             @Override
             public void onChanged(MapListDataBean mapListDataBean) {

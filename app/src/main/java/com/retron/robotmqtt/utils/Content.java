@@ -2,6 +2,14 @@ package com.retron.robotmqtt.utils;
 
 public final class Content {
 
+    public static String robot_statue = "";
+    public static String Initialize = "Initialize";
+    public static final String Standby = "Standby";
+    public static final String Charging_at = "Charging at charging";
+    public static final String scanning_map = "scanning_map";
+
+
+    public static final String SCANNING_MAP = "scanning_map";//机器人状态
     public static String REPORT_TIME = "report_time";//健康报告时间
     public static final String ROBOT_TASK_ERROR = "robot_task_error";//点任务报错信息
     public static final String SENDMAPNAME = "sendMapName";//返回地图列表名称
@@ -63,21 +71,12 @@ public final class Content {
     public static final String MQTT_DOWNLOAD_LOG = "mqtt_download_log";//下载log
     public static final String COMPRESSED = "compressed";
     public static final String FILE_NAME = "file_name";
+    public static final String response_ok = "ok";
+    public static final String response_fail = "fail";
+    public static final String ros_bag = "ros_bag";
 
 
-    public static final String UPDATE_FILE_LENGTH = "update_file_length";//for ota
-
-    public static final String ota_path = "http://36.152.128.5:180/ota/";
-    public static final String host = "tcp://34.152.128.5:1883";//MQTT Server Address
-    public static final String userName = "1gB3fjut24PpSRYXXDRD";//access token
-    public static final String passWord = null;
-    public static final String attributesTopic = "v1/devices/me/attributes";//参数属性topic
-    public static final String telemetryTopic = "v1/devices/me/telemetry";//时间相关属性topic
-    public static final String clientId = "RobotTwo";//client id
-    public static final int connection_timeout = 20;
-    public static final int keep_alive_time = 20;
-    public static final Integer qos = 0;
-    public static final boolean retained = false;
+    public static final String UPDATE_FILE_NAME = "update_file_name";//for ota
 
     //attributes
     public static final String taskStatus = "task_status";
@@ -87,6 +86,9 @@ public final class Content {
     public static final String location = "location_info";
     public static final String history = "history";
     public static final String download_map_dump = "download_map_dump";
+    public static final String upload_bag_result = "upload_bag_result";
+    public static final String result = "result";
+    public static final String upload_map_result = "upload_map_result";
 
     //telemetry
     public static final String robotStatus = "robot_status";
@@ -103,7 +105,7 @@ public final class Content {
     public static final String syncSetting = "sync_setting";
     public static final String execTask = "execute_task";
     public static final String send_map_dump = "send_map_dump";
-    public static final String sync_map_dump = "sync_map_dump";
+    public static final String upload_map = "upload_map";
     public static final String upload_log = "upload_log";
     public static final String reset = "reset";
     public static final String execute_task = "execute_task";

@@ -12,11 +12,11 @@ public class RobotTaskDataBean implements Serializable {
      * map_name_uuid : 1625551200461
      * type : robot_task_state
      */
-    private String task_Name;
+    private String task_Name = "";
     private List<Robot_task_stateEntity> robot_task_state;
-    private String map_name;
-    private String map_name_uuid;
-    private String type;
+    private String map_name = "";
+    private String map_name_uuid = "";
+    private String type = "";
 
     public void setTask_Name(String task_Name) {
         this.task_Name = task_Name;
