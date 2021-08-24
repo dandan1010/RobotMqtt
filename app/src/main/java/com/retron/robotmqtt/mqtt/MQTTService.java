@@ -30,10 +30,20 @@ public class MQTTService extends Service {
     private static String attributesTopic = "v1/devices/me/attributes";//订阅的topic
     private static String telemetryTopic ="v1/devices/me/telemetry";
     private static String rpcTopic ="v1/devices/me/rpc/request/+";
+    private static String requstTopic ="v1/devices/me/rpc/request/1";
+    private static String responseTopic ="v1/devices/me/rpc/response/1";
     private String clientId = "";//不同客户端需要修改值
     private static String PROVISION_REQUEST_TOPIC = "/provision/request";
     private static String PROVISION_RESPONSE_TOPIC = "/provision/response";
     public static String DEFAULT_USERNAME;
+
+    private static final String deviceName = "deviceName";
+    private static final String deviceNameValue = "device_name";
+    private static final String provisionDeviceKey = "provisionDeviceKey";
+    private static final String provisionDeviceKeyValue = "lqmcw5ncumlxebh26lgx";
+    private static final String provisionDeviceSecret = "provisionDeviceSecret";
+    private static final String provisionDeviceSecretValue = "zfhlyi5jm3xv798vjjb2";
+
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -46,6 +56,15 @@ public class MQTTService extends Service {
         Boolean retained = false;
         try {
             client.publish(attributesTopic, msg.getBytes(), qos.intValue(), retained.booleanValue());
+        } catch (MqttException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void publishRpc(String msg) {
+        Integer qos = 3;
+        Boolean retained = false;
+        try {
+            client.publish(requstTopic, msg.getBytes(), qos.intValue(), retained.booleanValue());
         } catch (MqttException e) {
             e.printStackTrace();
         }
@@ -128,14 +147,15 @@ public class MQTTService extends Service {
                 client.subscribe(attributesTopic, 0);
                 client.subscribe(telemetryTopic, 1);
                 client.subscribe(rpcTopic, 2);
+                client.subscribe(requstTopic, 3);
+                client.subscribe(responseTopic, 4);
                 if ("provision".equals(DEFAULT_USERNAME)) {
                     client.subscribe(PROVISION_RESPONSE_TOPIC, 3);
                     try {
                         JSONObject jsonObject = new JSONObject();
-                        jsonObject.put("deviceName","device_name");
-                        jsonObject.put("provisionDeviceKey", "lqmcw5ncumlxebh26lgx");
-                        jsonObject.put("provisionDeviceSecret", "zfhlyi5jm3xv798vjjb2");
-                        Log.d("文件发送",jsonObject.toString());
+                        jsonObject.put(deviceName,deviceNameValue);
+                        jsonObject.put(provisionDeviceKey, provisionDeviceKeyValue);
+                        jsonObject.put(provisionDeviceSecret, provisionDeviceSecretValue);
                         client.publish(PROVISION_REQUEST_TOPIC, jsonObject.toString().getBytes(), 0, false);
                     } catch (MqttException e) {
                         e.printStackTrace();

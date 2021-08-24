@@ -83,8 +83,10 @@ public class MqttHandleMsg implements MqttCallback {
             }
             if (jsonObject.has("params")) {
                 String params = jsonObject.getString("params");
+                Log.d("param ", "param数据： " + params);
                 JSONObject jsonParams = new JSONObject(params);
                 JSONArray jsonArray;
+                Log.d("getMethod ", "getMethod： " + mGsonUtils.getMethod(message));
                 switch (mGsonUtils.getMethod(message)) {
                     case Content.syncMap:
                         //地图列表
@@ -100,7 +102,9 @@ public class MqttHandleMsg implements MqttCallback {
                         }
                         break;
                     case Content.sync_task_list:
+                        Log.d("contrastTaskList1111", params);
                         SchedulerTaskListBean taskListBean = mGson.fromJson(params, SchedulerTaskListBean.class);
+                        Log.d("contrastTaskList2222", taskListBean.toString());
                         HandlerThreadManager.getInstance(mContext).contrastTaskList(taskListBean);
                         break;
                     case Content.syncSetting:

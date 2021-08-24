@@ -373,6 +373,7 @@ public class KeepAliveService extends LifecycleService {
                 break;
             case Content.SCANNING_MAP:
                 try {
+                    jsonObject = new JSONObject(message);
                     if (jsonObject.getBoolean(Content.SCANNING_MAP)) {
                         Content.robot_statue = Content.scanning_map;
                     } else {

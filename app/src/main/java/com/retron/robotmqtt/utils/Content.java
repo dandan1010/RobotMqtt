@@ -102,7 +102,7 @@ public final class Content {
     public static final String initialize = "initialize";
     public static final String sync_task_list = "sync_task_list";
     public static final String syncMap = "sync_map";
-    public static final String syncSetting = "sync_setting";
+    public static final String syncSetting = "sync_settings";
     public static final String execTask = "execute_task";
     public static final String send_map_dump = "send_map_dump";
     public static final String upload_map = "upload_map";

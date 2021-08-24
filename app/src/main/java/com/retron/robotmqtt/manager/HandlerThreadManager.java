@@ -373,9 +373,10 @@ public class HandlerThreadManager implements Handler.Callback {
     }
 
     public void contrastTaskList(SchedulerTaskListBean taskListBean) {
-        Log.d("contrastTaskList", taskListBean.toString());
         SchedulerTaskListBean taskListModel = KeepAliveService.taskViewModel.getTaskList();
         ArrayList<Integer> index = new ArrayList<>();
+        Log.d("contrastTaskList3333", taskListBean.toString() +
+                "taskListModel.size() " + taskListModel.getSchedulerTaskBeanList().size());
         for (int i = 0; i < taskListModel.getSchedulerTaskBeanList().size(); i++) {
             Log.d("contrastTaskList", taskListModel.getSchedulerTaskBeanList().size()
                     + ",    " + taskListBean.getSchedulerTaskBeanList().size());
@@ -395,9 +396,12 @@ public class HandlerThreadManager implements Handler.Callback {
                 }
             }
         }
+        Log.d("contrastTaskList","taskListBean数组长度"+ taskListBean.getSchedulerTaskBeanList().size());
         for (int j = 0; j < taskListBean.getSchedulerTaskBeanList().size(); j++) {
+            Log.d("contrastTaskList", "是否包含：" + index.contains(j));
             if (!index.contains(j)) {
                 String[] split = taskListBean.getSchedulerTaskBeanList().get(j).getDbAlarmCycle().split(",");
+                Log.d("contrastTaskList","数组长度"+ split.length);
                 List<String> cycle = new ArrayList<>();
                 for (int k = 0; k < split.length; k++) {
                     if (!TextUtils.isEmpty(split[k])) {
@@ -454,7 +458,8 @@ public class HandlerThreadManager implements Handler.Callback {
                     FTPManager.getInstance(mContext).connect();
                     JSONArray array = new JSONArray();
                     for (int i = 0; i < jsonArray.length(); i++) {
-                        String mapNameUuid = jsonArray.getJSONObject(i).getString(Content.MAP_NAME_UUID);
+//                        String mapNameUuid = jsonArray.getJSONObject(i).getString(Content.MAP_NAME_UUID);
+                        String mapNameUuid = jsonArray.getJSONObject(i).getString("map_uuid");
 //                        String mapMd5 = jsonArray.getJSONObject(i).getString(Content.dump_md5);
                         boolean uploadFile = FTPManager.getInstance(mContext).uploadFile(
                                 "/sdcard/robotMap/" + mapNameUuid + ".tar.gz",
@@ -469,7 +474,7 @@ public class HandlerThreadManager implements Handler.Callback {
                         }
                         array.put(jsonObject);
                     }
-                    MQTTService.publish(gsonUtils.sendRobotMsg(Content.upload_map_result, array));
+                    MQTTService.publishRpc(gsonUtils.sendRobotMsg(Content.upload_map_result, array));
                     FTPManager.getInstance(mContext).closeFTP();
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -504,7 +509,7 @@ public class HandlerThreadManager implements Handler.Callback {
                                 file.listFiles()[i].delete();
                             }
                         }
-                        MQTTService.publish(gsonUtils.sendRobotMsg(Content.upload_bag_result, array));
+                        MQTTService.publishRpc(gsonUtils.sendRobotMsg(Content.upload_bag_result, array));
                     } catch (JSONException e) {
                         e.printStackTrace();
                     }

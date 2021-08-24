@@ -1,6 +1,7 @@
 package com.retron.robotmqtt.manager;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.retron.robotmqtt.utils.SharedPrefUtil;
 
@@ -79,6 +80,7 @@ public class FTPManager {
             String subDirectory = directory.substring(start, end);
             try {
                 if (!ftpClient.changeWorkingDirectory(subDirectory)) {
+                    Log.d("创建文件","创建文件" + subDirectory);
                     ftpClient.makeDirectory(subDirectory);
                     ftpClient.changeWorkingDirectory(subDirectory);
                     bool = true;
